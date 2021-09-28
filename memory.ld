@@ -43,59 +43,49 @@ MEMORY {
 
 	/* 2 x 128B PIO Program Data. */
 	PIO0PD ( W ) : ORIGIN = 0x50200048, LENGTH = 128
-	PIO1PD ( W ) : ORIGIN = 0x50300048
+	PIO1PD ( W ) : ORIGIN = 0x50300048, LENGTH = 128
 }
 
 
 
 SECTIONS {
-	/* Stage 2 bootloader. */
+	/* ******************************************************************** */
 	.bootloader ORIGIN(FLASH) : 
 	{
-		KEEP(*(boot2));
-		KEEP(*(boot2.*));
+		KEEP(*(.boot2));
+		KEEP(*(.boot2.*));
 	} > FLASH
 
 	. = ORIGIN(FLASH) + 256
 
-	/* Core 0 and Core 1 vector table. */
+
+
+	/* ******************************************************************** */
 	.vectortable ORIGIN(FLASH + 0x100) : 
 	{
 		/* Core 0 vector table. */
-		/* **************************************************************** */
 		__svt0 = .;
 
-		/* Stack pointer. */
-		/* TODO : Make this dependant on Stack configuration. */
-		LONG( ORIGIN(SRAM4) + LENGTH(SRAM4) );
-
-		/* Core 0 Reset function pointer. */
+		LONG( ORIGIN(SRAM4) + 4096 );
 		KEEP(*(.vectortable.Reset0))
-
-		/* Core 0 interrupts. */
 		KEEP(*(.vectortable.int0));
 
 		__evt0 = .;
 
+
+
 		/* Core 1 vector table. */
-		/* **************************************************************** */
 		__svt1 = .;
 
-		/* Stack pointer. */
-		/* TODO : Make this dependant on Stack configuration. */
-		LONG( ORIGIN(SRAM5) + LENGTH(SRAM5) );
-
-		/* Core 0 Reset function pointer. */
-		LONG(0x00000000);
-
-		/* Core 0 interrupts. */
+		LONG( ORIGIN(SRAM4) + 2048 );
+		KEEP(*(.vectortable.Reset1));
 		KEEP(*(.vectortable.int1));
 
 		__evt1 = .;
 	} > FLASH
 
 
-	/* Code section. */
+
 	/* ******************************************************************** */
 	.text :
 	{
@@ -110,21 +100,26 @@ SECTIONS {
 		/* Hard Fault code. */
 		KEEP(*(.HardFault .HardFault.*));
 
+		/* Default handlers */
+		KEEP(*(.default .default.*));
+
 		. = ALIGN(4);
 	} > FLASH
 	. = ALIGN(4);
 
 
-	/* Code section. */
+
 	/* ******************************************************************** */
-	.rodata : ALIGN(4)
+	.rodata (NOLOAD) : ALIGN(4)
 	{
 		*(.rodata .rodata.*);
 		. = ALIGN(4);
 	} > FLASH
 
 
+
 	/* DATA section. */
+	/* ******************************************************************** */
 	.data : ALIGN(4)
 	{
 		. = ALIGN(4);
@@ -139,10 +134,12 @@ SECTIONS {
 	. = ALIGN(4);
 
 	__edata = .;
-	__sidata = LOADADDR(.data);
+	__ldata = LOADADDR(.data);
+
 
 
 	/* BSS section. */
+	/* ******************************************************************** */
 	. = ALIGN(4);
 	__sbss = .;
 
@@ -150,7 +147,7 @@ SECTIONS {
 	{
 		. = ALIGN(4);
 
-		*(.bss .bs.*);
+		*(.bss .bss.*);
 		*(COMMON);
 
 		. = ALIGN(4);
@@ -160,7 +157,9 @@ SECTIONS {
 	__ebss = .;
 
 
+
 	/* UNINIT section. */
+	/* ******************************************************************** */
 	. = ALIGN(4);
 	__suninit = .;
 
@@ -175,6 +174,27 @@ SECTIONS {
 
 	. = ALIGN(4);
 	__euninit = .;
+
+
+
+
+	/* System DATA section. */
+	/* ******************************************************************** */
+	.sysdata : ALIGN(4)
+	{
+		. = ALIGN(4);
+
+		__ssysdata = .;
+
+		*(.sysdata .sysdata.*);
+
+		. = ALIGN(4);
+	} > SRAM5 AT FLASH
+
+	. = ALIGN(4);
+
+	__esysdata = .;
+	__lsysdata = LOADADDR(.sysdata);
 
 
 	/* Discarded sections. */

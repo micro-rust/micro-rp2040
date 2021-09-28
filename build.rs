@@ -3,7 +3,7 @@
 
 use std::env;
 use std::fs::{ self, File };
-use std::io::{ self, Read, Write };
+use std::io::{ self, Write };
 use std::path::{ PathBuf };
 use std::process::Command;
 
@@ -56,10 +56,10 @@ fn rustify(bin: &PathBuf, rust: &PathBuf) {
 	code.push_str(&format!(
 "//! Rust module for the {} Flash second stage bootloader.
 
-#[link_section = \".bootloader\"]
+#[link_section = \".boot2.{}\"]
 #[used]
 pub static CODE : [u8; 256] = [\n
-", NAME));
+", NAME, NAME));
 
 	for i in 0..16 {
 		code.push_str("\n    ");
