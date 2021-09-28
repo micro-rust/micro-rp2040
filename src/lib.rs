@@ -2,12 +2,9 @@
 
 #![no_std]
 #![feature(asm)]
-#![feature(const_generics)]
-#![feature(const_evaluatable_checked)]
+#![feature(generic_const_exprs)]
 
-/// Low level access and misc. items.
-pub mod raw;
 
-/// System resources and configuration module.
+
+/// System module.
 pub mod sys;
-

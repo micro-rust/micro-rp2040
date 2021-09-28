@@ -1,2 +1,10 @@
 /target
 Cargo.lock
+
+
+openocd.sh
+debug.sh
+*.gdb
+
+*.elf
+*.bin
