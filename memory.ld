@@ -197,6 +197,24 @@ SECTIONS {
 	__lsysdata = LOADADDR(.sysdata);
 
 
+	/* System BSS section. */
+	/* ******************************************************************** */
+	. = ALIGN(4);
+	__ssysbss = .;
+
+	.bss (NOLOAD) : ALIGN(4)
+	{
+		. = ALIGN(4);
+
+		*(.sysbss .sysbss.*);
+
+		. = ALIGN(4);
+	} > SRAM5
+
+	. = ALIGN(4);
+	__esysbss = .;
+
+
 	/* Discarded sections. */
 	/DISCARD/ :
 	{

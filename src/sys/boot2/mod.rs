@@ -1,0 +1,1 @@
+//! Module to include the stage 2 bootloader into the final binary.

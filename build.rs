@@ -21,14 +21,23 @@ fn main() {
 	// Get the paths to all the files.
 	let (asm, elf, bin, rust) = buildpaths();
 
-	// Compile the source code.
-	compile(&asm, &elf);
+	// TODO : Check if the bootloader is already built.
+	{
+		// Compile the source code.
+		compile(&asm, &elf);
 
-	// Extract .text section.
-	extract(&elf, &bin);
+		// Extract .text section.
+		extract(&elf, &bin);
 
-	// Create Rust module.
-	rustify(&bin, &rust);
+		// Create Rust module.
+		rustify(&bin, &rust);
+	}
+
+	// Place the linker in the output directory.
+	linker();
+
+	// Rerun tags.
+	rerun();
 }
 
 
@@ -74,7 +83,7 @@ pub static CODE : [u8; 256] = [\n
 	let parent = rust.parent().expect("Could not create Rust file parent directory tree.");
 	fs::create_dir_all(parent).expect("Could not create Rust directory tree.");
 
-	let mut file = File::open(rust).expect("Could not open Rust module file.");
+	let mut file = File::create(rust).expect("Could not create Rust module file.");
 
 	write!(file, "{}", code).expect("Could not write to Rust file.");
 }
@@ -120,7 +129,7 @@ fn buildpaths() -> (PathBuf, PathBuf, PathBuf, PathBuf) {
 	let outdir = PathBuf::from( env::var("OUT_DIR").expect("Could not get output directory.") );
 
 	// Get current directory.
-	let curdir = env::current_dir().expect("Coudl not get current directory.");
+	let curdir = env::current_dir().expect("Could not get current directory.");
 
 	// Build assembly path.
 	let asm = curdir.join("src").join("sys").join("boot2").join("src").join(&format!("{}.S", NAME));
@@ -141,4 +150,34 @@ fn crc(input: &[u8]) -> u32 {
 	let mut engine = crc_any::CRCu32::crc32mpeg2();
 	engine.digest(input);
 	engine.get_crc()
+}
+
+
+fn linker() {
+	// Look for the output directory.
+	let outdir = PathBuf::from( env::var("OUT_DIR").expect("Could not get output directory.") );
+
+	// Create the path of the output file.
+	let outpath = outdir.join("link.x");
+
+	// Create the output file.
+	let mut outfile = File::create(outpath).expect("Could not create output linker.");
+
+	// Get current directory.
+	let curdir = env::current_dir().expect("Could not get current directory.");
+
+	// Look for the linker.
+	let inpath = curdir.join("memory.ld");
+
+	// Copy the linker.
+	outfile.write_all(&fs::read(inpath).expect("Could not read contents of memory.ld.")).expect("Could not write contents to link.x.");
+}
+
+
+fn rerun() {
+	// Build script changes.
+	println!("cargo:rerun-if-changed=build.rs");
+
+	// Linker changes.
+	println!("cargo:rerun-if-changed=memory.ld");
 }
