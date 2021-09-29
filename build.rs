@@ -73,7 +73,7 @@ pub static CODE : [u8; 256] = [\n
 	for i in 0..16 {
 		code.push_str("\n    ");
 		for j in 0..16 {
-			code.push_str(&format!("{:02x}, ", text[(i * 16) + j]));
+			code.push_str(&format!("0x{:02x}, ", text[(i * 16) + j]));
 		}
 	}
 
