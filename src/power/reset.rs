@@ -7,6 +7,7 @@ use crate::raw::AtomicRegister;
 
 
 use micro::Register;
+use micro::asm::nop;
 
 
 static mut RESET : Peripheral<u32, AtomicRegister<u32>, 3, 0x4000C000> = Peripheral::get();
@@ -54,6 +55,21 @@ impl ResetSystem {
 		unsafe { RESET[0].clear(u32::from(id)) };
 
 		self.0 &= !(u32::from(id));
+	}
+
+	/// Crate internal rset cycle.
+	pub(crate) fn cycle(&mut self, id: ResetId) {
+		// Reset.
+		unsafe { RESET[0].set(u32::from(id)) };
+
+		// Wait for propagation.
+		for _ in 0..20 { nop() }
+
+		// Unreset.
+		unsafe { RESET[0].clear(u32::from(id)) };
+
+		// wait until unreset is done.
+		while (RESET[2].read() & u32::from(id)) == 0 { nop(); }
 	}
 }
 

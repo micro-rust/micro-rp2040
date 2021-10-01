@@ -28,3 +28,31 @@ features = ["arm"]
 
 [build-dependencies]
 crc-any = "2.3"
+
+
+[features]
+
+# XOSC features.
+xosc-defined = []
+
+xosc-8MHz  = ["xosc-defined"]
+xosc-10MHz = ["xosc-defined"]
+xosc-12MHz = ["xosc-defined"]
+xosc-15MHz = ["xosc-defined"]
+
+
+
+# Flash features.
+flash-defined = []
+
+flash-2MB  = ["flash-defined"]
+flash-4MB  = ["flash-defined"]
+flash-8MB  = ["flash-defined"]
+flash-16MB = ["flash-defined"]
+
+
+# Board features.
+
+
+# Raspberry Pico.
+raspberry-pico = ["flash-2MB", "xosc-12MHz"]

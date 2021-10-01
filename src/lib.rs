@@ -6,6 +6,8 @@
 #![feature(const_fn_trait_bound)]
 
 
+#![allow(incomplete_features)]
+
 
 /// Power and Reset peripherals.
 pub mod power;
@@ -16,7 +18,18 @@ pub mod sync;
 /// System module.
 pub mod sys;
 
+/// Time module.
+pub mod time;
 
 
 /// Raw access module.
 pub(crate) mod raw;
+
+
+
+/// Macro module.
+#[macro_use]
+mod macros;
+
+/// Feature gated details.
+mod features;

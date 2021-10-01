@@ -186,7 +186,7 @@ SECTIONS {
 
 		__ssysdata = .;
 
-		*(.sysdata .sysdata.*);
+		*(.systemdata .systemdata.*);
 
 		. = ALIGN(4);
 	} > SRAM5 AT FLASH
@@ -202,11 +202,11 @@ SECTIONS {
 	. = ALIGN(4);
 	__ssysbss = .;
 
-	.bss (NOLOAD) : ALIGN(4)
+	.sysbss (NOLOAD) : ALIGN(4)
 	{
 		. = ALIGN(4);
 
-		*(.sysbss .sysbss.*);
+		*(.systembss .systembss.*);
 
 		. = ALIGN(4);
 	} > SRAM5

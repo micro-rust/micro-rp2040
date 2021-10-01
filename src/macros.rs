@@ -23,11 +23,23 @@ macro_rules! main1 {
 }
 
 /// Macro exported to be used when the XOSC frequency is unknown.
+#[cfg(not(feature = "xosc-defined"))]
 #[macro_export]
 macro_rules! defineXOSC {
 	($f:expr) => {
 		#[no_mangle]
 		#[used]
-		static __XOSC : u32 = $f;
+		static XFREQ : u32 = $f;
+	};
+}
+
+/// Macro exported to be used when the Flash size is unknown.
+#[cfg(not(feature = "flash-defined"))]
+#[macro_export]
+macro_rules! defineFLASHSIZE {
+	($f:expr) => {
+		#[no_mangle]
+		#[used]
+		static FLASHSIZE : u32 = $f;
 	};
 }

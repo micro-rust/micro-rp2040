@@ -18,6 +18,10 @@ impl<const N: usize> Spinlock<N> {
 	/// Acquires the lock if it's available.
 	#[inline(always)]
 	pub fn acquire() -> Option<Self> {
+		if N >  31 { panic!("Spinlocks higher than 31 do not exist.") }
+		if N == 31 { panic!("Spinlock 31 is system reserved.") }
+
+
 		match unsafe { LOCK[N].read() } {
 			0 => None,
 			_ => Some(Self),
