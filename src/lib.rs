@@ -2,12 +2,37 @@
 
 #![no_std]
 #![feature(asm)]
-#![feature(const_generics)]
-#![feature(const_evaluatable_checked)]
+#![feature(generic_const_exprs)]
+#![feature(const_fn_trait_bound)]
 
-/// Low level access and misc. items.
-pub mod raw;
 
-/// System resources and configuration module.
+#![allow(incomplete_features)]
+
+
+/// GP I/O Pins module.
+pub mod pins;
+
+/// Power and Reset peripherals.
+pub mod power;
+
+/// Synchronization module.
+pub mod sync;
+
+/// System module.
 pub mod sys;
 
+/// Time module.
+pub mod time;
+
+
+/// Raw access module.
+pub(crate) mod raw;
+
+
+
+/// Macro module.
+#[macro_use]
+mod macros;
+
+/// Feature gated details.
+mod features;

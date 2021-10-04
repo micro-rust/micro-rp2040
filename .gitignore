@@ -1,2 +1,17 @@
 /target
 Cargo.lock
+
+
+openocd.sh
+debug.sh
+objcopy.sh
+
+*.gdb
+*.elf
+*.bin
+
+/src/sys/boot2/generic03h
+/src/sys/boot2/w25q080
+/src/sys/boot2/at25sf128a
+/src/sys/boot2/is25lp080
+/src/sys/boot2/w25x10cl

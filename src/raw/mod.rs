@@ -1,7 +1,12 @@
-//! Raw access to the RP2040.
+//! Raw module.
+//! Abstract the low level access to registers and peripherals.
 
-pub mod addr;
+
+#![deny(warnings)]
+
 
 mod reg;
+mod per;
 
-pub(crate) use self::reg::{ Register, RRegister, XRegister };
+pub use self::reg::{ AtomicRegister, SIORegister };
+pub use self::per::{ Peripheral, Single };
