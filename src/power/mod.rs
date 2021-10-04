@@ -8,7 +8,7 @@ mod power;
 mod reset;
 
 
-pub use self::power::PowerId;
+pub use self::power::{ BrownoutLevel, Overvoltage, PowerId, Undervoltage };
 pub use self::reset::ResetId;
 
 #[link_section = ".systembss.POWER"]

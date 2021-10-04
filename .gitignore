@@ -4,8 +4,9 @@ Cargo.lock
 
 openocd.sh
 debug.sh
-*.gdb
+objcopy.sh
 
+*.gdb
 *.elf
 *.bin
 

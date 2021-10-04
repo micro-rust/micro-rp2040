@@ -1,4 +1,4 @@
-//! Feature gated configuration data.
+//! Feature-gated configuration data.
 
 
 

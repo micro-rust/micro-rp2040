@@ -9,6 +9,9 @@
 #![allow(incomplete_features)]
 
 
+/// GP I/O Pins module.
+pub mod pins;
+
 /// Power and Reset peripherals.
 pub mod power;
 
