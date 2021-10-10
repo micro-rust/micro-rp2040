@@ -10,7 +10,7 @@ use micro::Peripheral;
 
 
 /// Static reference to the ROSC Control peripheral.
-static mut ROSC : Peripheral<u32, AtomicRegister<u32>, 8, 0x40060000> = Peripheral::get();
+type ROSC = Peripheral<u32, AtomicRegister<u32>, 8, 0x40060000>;
 
 
 

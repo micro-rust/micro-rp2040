@@ -43,3 +43,20 @@ macro_rules! defineFLASHSIZE {
 		static FLASHSIZE : u32 = $f;
 	};
 }
+
+
+/// Macro to reserve GPIOs at compile time.
+/// This will fail with a linker error if a pin is reserved more than once.
+/// Example:
+/// ```
+/// static PIN0 : Gpio<0> = reserveGPIO!(0);
+/// ```
+#[macro_export]
+macro_rules! reserveGPIO {
+	($x:expr) => {{
+		#[no_mangle]
+		static __GPIOX__ : u32 = (1 << $x);
+
+		unsafe { micro_rp2040::pins::Gpio::<$x>::reserve() }
+	}};
+}

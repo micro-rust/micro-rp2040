@@ -52,6 +52,17 @@ impl ClockSources {
 
     /// Initializes the Clock sources.
     pub(crate) fn init(&mut self) {
+        // Disable the System and USB PLL.
+        self.pllsys.off();
+        self.pllusb.off();
+
+        // Initialize the XOSC.
         self.xosc.init();
+
+        // Initialize the System PLL.
+        self.pllsys.init();
+
+        // Initialize USB PLL.
+        self.pllusb.init();
     }
 }

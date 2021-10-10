@@ -12,7 +12,7 @@ use micro::asm::nop;
 
 
 /// Static reference to the System Clock Control peripheral.
-static mut CLOCK : Peripheral<u32, AtomicRegister<u32>, 3, 0x4000803C> = Peripheral::get();
+type CLOCK = Peripheral<u32, AtomicRegister<u32>, 3, 0x4000803C>;
 
 
 /// Clock Info wrapper for the System Clock.
@@ -30,6 +30,8 @@ impl SystemClock {
     /// Initializes the System Clock to the XOSC.
     pub(crate) fn init(&mut self) {
         extern "C" { static XFREQ : u32; }
+
+        let mut CLOCK: CLOCK = Peripheral::get();
 
         // Clear divider to set as 2^16.
         CLOCK[1].write(0);
@@ -53,6 +55,8 @@ impl SystemClock {
 
     /// Switch to the auxiliary clock.
     pub fn aux(&mut self) -> Result<(), ()> {
+        let mut CLOCK: CLOCK = Peripheral::get();
+
         match Syslock::acquire() {
             Some(_) => match self.0.refs {
                 0 => {
@@ -72,6 +76,8 @@ impl SystemClock {
 
     /// Switch to the Reference clock.
     pub fn reference(&mut self) -> Result<(), ()> {
+        let mut CLOCK: CLOCK = Peripheral::get();
+
         match Syslock::acquire() {
             Some(_) => match self.0.refs {
                 0 => {
@@ -91,6 +97,8 @@ impl SystemClock {
     /// Select the secondary clock.
     /// This method will fail if the secondary Reference Clock is in use.
     pub fn secondary(&mut self, clock: Clock) -> Result<(), ()> {
+        let CLOCK: CLOCK = Peripheral::get();
+
         match Syslock::acquire() {
             Some(_) => match self.0.refs {
 
@@ -110,6 +118,8 @@ impl SystemClock {
 
     /// Inner method to set the secondary clock.
     fn __secondary__(&mut self, clock: Clock) -> Result<(), ()> {
+        let mut CLOCK: CLOCK = Peripheral::get();
+
         match clock {
             Clock::PllSys => {
                 CLOCK[0].clear(0x7 << 5);
@@ -140,6 +150,8 @@ impl SystemClock {
                 CLOCK[0].set(0x5 << 5);
                 self.0.info.1 = clock;
             },
+
+            _ => return Err(()),
         }
 
         Ok(())

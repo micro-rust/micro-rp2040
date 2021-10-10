@@ -11,7 +11,7 @@ use micro::Register;
 
 
 /// Static reference to the USB Clock Control peripheral.
-static mut CLOCK : Peripheral<u32, AtomicRegister<u32>, 2, 0x40008054> = Peripheral::get();
+type CLOCK = Peripheral<u32, AtomicRegister<u32>, 2, 0x40008054>;
 
 
 /// Clock Info wrapper for the USB Clock.
@@ -28,6 +28,8 @@ impl UsbClock {
 
     /// Initializes the USB Clock to the USB PLL Output.
     pub(crate) fn init(&mut self) {
+        let mut CLOCK: CLOCK = Peripheral::get();
+
         // Kill the clock.
         CLOCK[0].write(0);
 

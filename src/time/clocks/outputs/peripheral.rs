@@ -11,7 +11,7 @@ use micro::Register;
 
 
 /// Static reference to the Peripheral Clock Control peripheral.
-static mut CLOCK : Peripheral<u32, AtomicRegister<u32>, 1, 0x40008048> = Peripheral::get();
+type CLOCK = Peripheral<u32, AtomicRegister<u32>, 1, 0x40008048>;
 
 
 /// Clock Info wrapper for the Peripheral Clock.
@@ -28,6 +28,8 @@ impl PeripheralClock {
 
     /// Initializes the Peripheral Clock to the XOSC.
     pub(crate) fn init(&mut self) {
+        let mut CLOCK: CLOCK = Peripheral::get();
+
         // Kill the clock.
         CLOCK[0].write(0);
 

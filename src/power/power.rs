@@ -12,9 +12,9 @@ use crate::sync::Syslock;
 use micro::{ Peripheral, Register };
 
 
-static mut PSM : Peripheral<u32, AtomicRegister<u32>, 4, 0x40010000> = Peripheral::get();
+type PSM = Peripheral<u32, AtomicRegister<u32>, 4, 0x40010000>;
 
-static mut VREG : Peripheral<u32, AtomicRegister<u32>, 3, 0x40064000> = Peripheral::get();
+type VREG = Peripheral<u32, AtomicRegister<u32>, 3, 0x40064000>;
 
 
 
@@ -28,11 +28,15 @@ impl PowerSystem {
 
 	/// Overvolts the RP2040 to the given non-nominal voltage.
 	#[inline]
-	pub unsafe fn overvolt(&mut self, v: Overvoltage) -> Result<(), ()> {
+	pub unsafe fn overvolt(&self, v: Overvoltage) -> Result<(), ()> {
 		const MASK: u32 = 0xF << 4;
 
+		let mut VREG: VREG = Peripheral::get();
+
+		let val = (VREG[0].read() & MASK) | (u32::from(v) << 4);
+
 		match Syslock::acquire() {
-			Some(_) => Ok( VREG[0].write( (VREG[0].read() & MASK) | (u32::from(v) << 4) ) ),
+			Some(_) => Ok( VREG[0].write( val ) ),
 			_ => Err(()),
 		}
 	}
@@ -40,26 +44,36 @@ impl PowerSystem {
 
 	/// Undervolts the RP2040 to the given non-nominal voltage.
 	#[inline]
-	pub unsafe fn undervolt(&mut self, v: Undervoltage) -> Result<(), ()> {
+	pub unsafe fn undervolt(&self, v: Undervoltage) -> Result<(), ()> {
 		const MASK: u32 = 0xF << 4;
 
+		let mut VREG: VREG = Peripheral::get();
+
+		let val = (VREG[0].read() & MASK) | (u32::from(v) << 4);
+
 		match Syslock::acquire() {
-			Some(_) => Ok( VREG[0].write( (VREG[0].read() & MASK) | (u32::from(v) << 4) ) ),
+			Some(_) => Ok( VREG[0].write( val ) ),
 			_ => Err(()),
 		}
 	}
 
 	/// Sets the nominal voltage.
 	#[inline]
-	pub unsafe fn nominal(&mut self) {
+	pub unsafe fn nominal(&self) {
 		const MASK: u32 = 0xF << 4;
 
-		VREG[0].write( (VREG[0].read() & MASK) | (0b1011 << 4) )
+		let mut VREG: VREG = Peripheral::get();
+
+		let val = (VREG[0].read() & MASK) | (0b1011 << 4);
+
+		VREG[0].write( val )
 	}
 
 	/// Sets the given borwnout level.
 	#[inline]
-	pub unsafe fn brownout(&mut self, level: Option<BrownoutLevel>) -> Result<(), ()> {
+	pub unsafe fn brownout(&self, level: Option<BrownoutLevel>) -> Result<(), ()> {
+		let mut VREG: VREG = Peripheral::get();
+
 		match Syslock::acquire() {
 			Some(_) => match level {
 				None => { Ok( VREG[1].clear(1) ) },
@@ -71,14 +85,18 @@ impl PowerSystem {
 
 	/// Powers on the given domain.
 	#[inline]
-	pub fn poweron(&mut self, id: PowerId) {
+	pub fn poweron(&self, id: PowerId) {
+		let mut PSM: PSM = Peripheral::get();
+
 		PSM[1].clear(u32::from(id));
 		PSM[0].set(u32::from(id))
 	}
 
 	/// Powers off the given domain.
 	#[inline]
-	pub unsafe fn poweroff(&mut self, id: PowerId) -> Result<(), ()> {
+	pub unsafe fn poweroff(&self, id: PowerId) -> Result<(), ()> {
+		let mut PSM: PSM = Peripheral::get();
+
 		match Syslock::acquire() {
 			Some(_) => {
 				PSM[0].clear(u32::from(id));
@@ -94,8 +112,17 @@ impl PowerSystem {
 	/// Indicates if the given domain is powered on.
 	/// This can return `false` for a while until the whole domain wakes up.
 	#[inline]
-	pub fn on(&self, id: PowerId) -> bool {
+	pub fn enabled(&self, id: PowerId) -> bool {
+		let PSM: PSM = Peripheral::get();
 		( PSM[3].read() & u32::from(id) ) == u32::from(id)
+	}
+
+	/// Indicates if the given domain is powered off.
+	/// This can return `true` for a while until the whole domain wakes up.
+	#[inline]
+	pub fn disabled(&self, id: PowerId) -> bool {
+		let PSM: PSM = Peripheral::get();
+		( PSM[3].read() & u32::from(id) ) != u32::from(id)
 	}
 }
 

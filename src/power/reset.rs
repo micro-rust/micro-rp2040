@@ -13,52 +13,50 @@ use micro::asm::nop;
 static mut RESET : Peripheral<u32, AtomicRegister<u32>, 3, 0x4000C000> = Peripheral::get();
 
 
-pub struct ResetSystem(u32);
+pub struct ResetSystem;
 
 impl ResetSystem {
 	/// Static initializer.
 	pub const fn empty() -> Self {
-		ResetSystem(0u32)
+		ResetSystem
 	}
 
 	/// Performs the intialization routine.
-	pub(crate) fn init(&mut self) {
-		const RES : ResetId =
+	pub(crate) fn init(&self) {
+		static RES : ResetId =
 				ResetId::IOQSPI + ResetId::PADSQSPI +
 				ResetId::PLLSYS + ResetId::PLLUSB +
 				ResetId::USBCTRL + ResetId::SYSCFG;
 
-		const UNRES : ResetId =
+		static UNRES : ResetId =
 				ResetId::ADC + ResetId::RTC +
 				ResetId::SPI0 + ResetId::SPI1 +
 				ResetId::UART0 + ResetId::UART1;
 
-		// Reset all but IOQSPI, PADSQSPI, PLLSYS, PLLUSB, USBCTRL, SYSCFG.
-		RESET[0].set(u32::from(RES.inverse()));
+		unsafe {
+			// Reset all but IOQSPI, PADSQSPI, PLLSYS, PLLUSB, USBCTRL, SYSCFG.
+			RESET[0].set(u32::from(RES.inverse()));
 
-		// Unreset all but ADC, RTC, SPIx and UARTx.
-		RESET[0].clear(u32::from(UNRES.inverse()));
+			// Unreset all but ADC, RTC, SPIx and UARTx.
+			RESET[0].clear(u32::from(UNRES.inverse()));
 
-		// Wait until all periopherals are accessible.
-		while (RESET[2].read() & u32::from(UNRES)) == 0 { micro::asm::nop(); }
+			// Wait until all periopherals are accessible.
+			while (RESET[2].read() & u32::from(UNRES)) == 0 { micro::asm::nop(); }
+		}
 	}
 
 	/// Puts the given peripherals in Reset.
-	pub fn reset(&mut self, id: ResetId) {
+	pub fn reset(&self, id: ResetId) {
 		unsafe { RESET[0].set(u32::from(id)) };
-
-		self.0 |= u32::from(id);
 	}
 
 	/// Pulls the given peripherals from Reset.
-	pub fn unreset(&mut self, id: ResetId) {
+	pub fn unreset(&self, id: ResetId) {
 		unsafe { RESET[0].clear(u32::from(id)) };
-
-		self.0 &= !(u32::from(id));
 	}
 
 	/// Crate internal rset cycle.
-	pub(crate) fn cycle(&mut self, id: ResetId) {
+	pub(crate) fn cycle(&self, id: ResetId) {
 		// Reset.
 		unsafe { RESET[0].set(u32::from(id)) };
 
@@ -69,7 +67,7 @@ impl ResetSystem {
 		unsafe { RESET[0].clear(u32::from(id)) };
 
 		// wait until unreset is done.
-		while (RESET[2].read() & u32::from(id)) == 0 { nop(); }
+		while ( unsafe { RESET[2].read() } & u32::from(id)) == 0 { nop(); }
 	}
 }
 
@@ -128,7 +126,7 @@ impl ResetId {
 	}
 }
 
-impl core::ops::Add<Self> for ResetId {
+impl const core::ops::Add<Self> for ResetId {
 	type Output = Self;
 
 	fn add(self, rhs: Self) -> Self::Output {
@@ -136,7 +134,7 @@ impl core::ops::Add<Self> for ResetId {
 	}
 }
 
-impl core::ops::BitOr<Self> for ResetId {
+impl const core::ops::BitOr<Self> for ResetId {
 	type Output = Self;
 
 	fn bitor(self, rhs: Self) -> Self::Output {

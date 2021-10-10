@@ -28,11 +28,8 @@ const FBDIVMAX : u32 = 320;
 const FBDIVMIN : u32 =  16;
 
 
-/// Static reference to the XOSC Control peripheral.
-static mut PLL : Peripheral<u32, AtomicRegister<u32>, 4, 0x40028000> = Peripheral::get();
-
-/// Precomputed 48 MHz configuration.
-static CONFIG : u32 = (6 << 16) | (5 << 12) | unsafe { 1_440_000 / (XFREQ / 1000) };
+/// Static reference to the USB PLL Control peripheral.
+type PLL = Peripheral<u32, AtomicRegister<u32>, 4, 0x4002C000>;
 
 
 
@@ -50,22 +47,31 @@ impl PllUsb {
 
     /// Initializes the System PLL to 133 MHz low jitter.
     pub(crate) fn init(&mut self) {
+        extern "C" {
+            static __USBCONFIG__ : u32;
+        }
+
+        let mut PLL: PLL = Peripheral::get();
+
         // Reset the PLL.
         RESET.cycle(ResetId::PLLUSB);
 
         // Load reference divisor and feedback divisor.
         PLL[0].write(1);
-        PLL[2].write(CONFIG);
+        unsafe { PLL[2].write(__USBCONFIG__); }
 
         // Turn on PLL and VCO domains and wait for stabilization.
         PLL[1].set((1 << 5) | 1);
         while PLL[0].read() >> 31 == 0 { nop() }
 
         // Load post dividers.
-        PLL[3].write(CONFIG);
+        unsafe { PLL[3].write(__USBCONFIG__); }
 
         // Turn on post dividers.
         PLL[1].set(1 << 3);
+
+        // Set the frequency.
+        unsafe { CLOCKS.freqs[Clock::PllSys.index()] = ( XFREQ * (PLL[2].read() & 0xFFF) ) / 30; }
     }
 
     /// Returns the current frequency.
@@ -95,5 +101,12 @@ impl PllUsb {
     #[inline(always)]
     pub(crate) fn __freeze__(&mut self) {
         self.0.__freeze__()
+    }
+
+    /// Module internal method to shut down the PLL.
+    #[inline(always)]
+    pub(super) fn off(&mut self) {
+        let mut PLL: PLL = Peripheral::get();
+        PLL[1].write(0);
     }
 }

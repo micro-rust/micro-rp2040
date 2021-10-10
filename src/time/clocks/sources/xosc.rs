@@ -12,17 +12,8 @@ use micro::asm::nop;
 
 
 
-extern "C" {
-    static XFREQ : u32;
-    static XMULTIPLIER : u32;
-}
-
-/// Precomputed XOSC delay.
-const DELAY : u32 = unsafe { (((XFREQ / 1000) + 128) / 256) * XMULTIPLIER };
-
-
-/// Static reference to the XOSC Control peripheral.
-static mut XOSC : Peripheral<u32, AtomicRegister<u32>, 3, 0x40024000> = Peripheral::get();
+/// Type of the XOSC Control peripheral.
+type XOSC = Peripheral<u32, AtomicRegister<u32>, 4, 0x40024000>;
 
 
 
@@ -40,14 +31,24 @@ impl Xosc {
 
     /// Initializes the Crystal Oscillator.
     pub(crate) fn init(&mut self) {
+        extern "C" {
+            static XFREQ : u32;
+            static __DELAY__ : u32;
+        }
+
+        let mut XOSC: XOSC = Peripheral::get();
+
         // Set startup delay.
-        XOSC[3].write(DELAY);
+        unsafe { XOSC[3].write(__DELAY__); }
 
         // Set enable status and frequency range.
         XOSC[0].write( (0xFAB << 12) | 0xAA0 );
 
         // Wait for stable XOSC.
         while (XOSC[1].read() >> 31) == 0 { nop() }
+
+        // Set the frequencies.
+        unsafe { CLOCKS.freqs[Clock::Xosc.index()] = XFREQ; }
     }
 
     /// Returns the current frequency.

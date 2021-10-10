@@ -15,6 +15,11 @@ use micro::asm::nop;
 
 extern "C" {
     static XFREQ : u32;
+
+    static __HSLJ__ : u32;
+    static __HSLP__ : u32;
+    static __LSLJ__ : u32;
+    static __LSLP__ : u32;
 }
 
 /// Maximum VCO frequency in MHz.
@@ -28,22 +33,8 @@ const FBDIVMAX : u32 = 320;
 const FBDIVMIN : u32 =  16;
 
 
-/// Static reference to the XOSC Control peripheral.
-static mut PLL : Peripheral<u32, AtomicRegister<u32>, 4, 0x40028000> = Peripheral::get();
-
-/// Precomputed High Speed - Low Jitter PLL configuration.
-/// Produces a 133.33 MHz output.
-static HSLJ : u32 = (4 << 16) | (3 << 12) | unsafe { 1_600_000 / (XFREQ / 1000) };
-/// Precomputed High Speed - Low Power PLL configuration.
-/// Produces a 133.33 MHz output.
-static HSLP : u32 = (3 << 16) | (1 << 12) | unsafe {   400_000 / (XFREQ / 1000) };
-
-/// Precomputed High Speed - Low Jitter PLL configuration.
-/// Produces a 32.65 MHz output.
-static LSLJ : u32 = (7 << 16) | (7 << 12) | unsafe { 1_600_000 / (XFREQ / 1000) };
-/// Precomputed High Speed - Low Power PLL configuration.
-/// Produces a 33.33 MHz output.
-static LSLP : u32 = (4 << 16) | (3 << 12) | unsafe {   400_000 / (XFREQ / 1000) };
+/// Static reference to the System PLL Control peripheral.
+type PLL = Peripheral<u32, AtomicRegister<u32>, 4, 0x40028000>;
 
 
 
@@ -61,22 +52,98 @@ impl PllSystem {
 
     /// Initializes the System PLL to 133 MHz low jitter.
     pub(crate) fn init(&mut self) {
+        let mut PLL: PLL = Peripheral::get();
+
         // Reset the PLL.
         RESET.cycle(ResetId::PLLSYS);
 
         // Load reference divisor and feedback divisor.
         PLL[0].write(1);
-        PLL[2].write(HSLJ);
+        unsafe { PLL[2].write(__HSLJ__) };
 
         // Turn on PLL and VCO domains and wait for stabilization.
         PLL[1].set((1 << 5) | 1);
         while PLL[0].read() >> 31 == 0 { nop() }
 
         // Load post dividers.
-        PLL[3].write(HSLJ);
+        unsafe { PLL[3].write(__HSLJ__) };
 
         // Turn on post dividers.
         PLL[1].set(1 << 3);
+
+        // Set the frequency.
+        unsafe { CLOCKS.freqs[Clock::PllSys.index()] = ( XFREQ * (PLL[2].read() & 0xFFF) ) / 12; }
+    }
+
+
+    /// Load precomputed High Speed - Low Jitter PLL configuration.
+    /// Produces a 133.33 MHz low jitter output.
+    #[inline(always)]
+    pub fn hslj(&self) -> Result<(), ()> {
+        unsafe { self.load(__HSLJ__) }
+    }
+
+    /// Loads a precomputed High Speed - Low Power PLL configuration.
+    /// Produces a 133.33 MHz output.
+    #[inline(always)]
+    pub fn hslp(&self) -> Result<(), ()> {
+        unsafe { self.load(__HSLP__) }
+    }
+
+    /// Loads a precomputed High Speed - Low Jitter PLL configuration.
+    /// Produces a 32.65 MHz output.
+    #[inline(always)]
+    pub fn lslj(&self) -> Result<(), ()> {
+        unsafe { self.load(__LSLJ__) }
+    }
+
+    /// Precomputed High Speed - Low Power PLL configuration.
+    /// Produces a 33.33 MHz output.
+    #[inline(always)]
+    pub fn lslp(&self) -> Result<(), ()> {
+        unsafe { self.load(__LSLP__) }
+    }
+
+
+    /// Load shte given configuration data.
+    fn load(&self, cfg: u32) -> Result<(), ()> {
+        extern "C" {
+            static XFREQ : u32;
+        }
+
+        let mut PLL: PLL = Peripheral::get();
+
+        match Syslock::acquire() {
+            Some(_) => match self.0.refs() {
+                0 => {
+                    // Reset the PLL.
+                    RESET.cycle(ResetId::PLLSYS);
+
+                    // Load reference divisor and feedback divisor.
+                    PLL[0].write(1);
+                    PLL[2].write(cfg);
+
+                    // Turn on PLL and VCO domains and wait for stabilization.
+                    PLL[1].set((1 << 5) | 1);
+                    while PLL[0].read() >> 31 == 0 { nop() }
+
+                    // Load post dividers.
+                    PLL[3].write(cfg);
+
+                    // Turn on post dividers.
+                    PLL[1].set(1 << 3);
+
+                    // Set the frequency.
+                    unsafe { CLOCKS.freqs[Clock::PllSys.index()] = ( XFREQ * (cfg & 0xFFF) ) / 12; }
+
+                    Ok(())
+                },
+
+                _ => Err(()),
+            }
+
+            _ => Err(()),
+        }
     }
 
     /// Returns the current frequency.
@@ -106,5 +173,13 @@ impl PllSystem {
     #[inline(always)]
     pub(crate) fn __freeze__(&mut self) {
         self.0.__freeze__()
+    }
+
+    /// Module internal method to shut down the PLL.
+    #[inline(always)]
+    pub(super) fn off(&mut self) {
+        let mut PLL: PLL = Peripheral::get();
+
+        PLL[1].write(0);
     }
 }

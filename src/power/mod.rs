@@ -13,9 +13,9 @@ pub use self::reset::ResetId;
 
 #[link_section = ".systembss.POWER"]
 #[used]
-pub static mut POWER : self::power::PowerSystem = self::power::PowerSystem::empty();
+pub static POWER : self::power::PowerSystem = self::power::PowerSystem::empty();
 
 
 #[link_section = ".systembss.RESET"]
 #[used]
-pub static mut RESET : self::reset::ResetSystem = self::reset::ResetSystem::empty();
+pub static RESET : self::reset::ResetSystem = self::reset::ResetSystem::empty();

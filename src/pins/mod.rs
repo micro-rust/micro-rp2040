@@ -9,16 +9,16 @@ pub use self::pinout::*;
 
 
 
-#[link_section = ".systemdata.PINLOCK"]
-static mut PINLOCK : u32 = 0x00000000;
-
-
 pub struct Gpio<const N: u32>;
 
 
 impl<const N: u32> Gpio<N> {
 	/// Acquires the pin at runtime if available.
 	pub fn acquire() -> Option<Self> {
+		extern "C" {
+			static PINLOCK : u32;
+		}
+
 		match Syslock::acquire() {
 			Some(_) => match (unsafe { PINLOCK } >> N) & 1 {
 				0 => Some(Self),
@@ -29,18 +29,11 @@ impl<const N: u32> Gpio<N> {
 		}
 	}
 
-	/// Acquires the pin at compile time. If not available, it will panic.
-	pub const fn reserve() -> Self {
-		match (unsafe { PINLOCK } >> N) & 1 {
-			0 => Self,
-			_ => panic!("Pin reservation at compile time cannot fail"),
-		}
+	/// DO NOT USE THIS METHOD.
+	pub unsafe fn reserve() -> Self {
+		Self
 	}
 }
-
-
-const PIN: Gpio<0> = Gpio::reserve();
-
 
 
 

@@ -58,6 +58,27 @@ impl ClockOutputs {
 
     /// Initializes the Clock sources.
     pub(crate) fn init(&mut self) {
+        // Configure Reference clock.
 
+        // Configure System clock.
+
+        // Configure USB clock.
+
+        // Configure ADC clock.
+
+        // Configure RTC clock.
+
+        // Configure Peripheral clock.
+    }
+
+    /// Pre initialization sequence.
+    pub(crate) fn preinit(&mut self) {
+        // Clear all the frequencies.
+
+        // Enable Watchdog tick.
+
+        // Disable resuscitation clock.
+
+        // Switch reference and system clocks to their defaults.
     }
 }

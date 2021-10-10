@@ -42,8 +42,13 @@ impl Clocks {
 
     /// Initialization code.
     pub fn init(&mut self) {
+        // Preinitialization.
         self.outputs.preinit();
+
+        // Initialize all clock sources.
         self.sources.init();
+
+        // Configure all outputs.
         self.outputs.init();
     }
 }
@@ -111,30 +116,30 @@ impl Clock {
     /// Returns the index of the clock frequency index.
     pub const fn index(&self) -> usize {
         match *self {
-            GPInput0 => 0,
-            GPInput1 => 1,
+            Clock::GPInput0 => 0,
+            Clock::GPInput1 => 1,
 
-            Rosc => 2,
-            Xosc => 3,
+            Clock::Rosc => 2,
+            Clock::Xosc => 3,
 
-            PllSys => 4,
-            PllUsb => 5,
+            Clock::PllSys => 4,
+            Clock::PllUsb => 5,
 
-            Reference => 6,
-            System => 7,
+            Clock::Reference => 6,
+            Clock::System => 7,
 
-            Adc =>  8,
-            Rtc =>  9,
-            Usb => 10,
+            Clock::Adc =>  8,
+            Clock::Rtc =>  9,
+            Clock::Usb => 10,
 
-            Peripheral => 11,
+            Clock::Peripheral => 11,
 
-            GPOutput0 => 12,
-            GPOutput1 => 13,
-            GPOutput2 => 14,
-            GPOutput3 => 15,
+            Clock::GPOutput0 => 12,
+            Clock::GPOutput1 => 13,
+            Clock::GPOutput2 => 14,
+            Clock::GPOutput3 => 15,
 
-            Auxiliary => 16,
+            Clock::Auxiliary => 16,
 
             Clock::None => 16,
         }

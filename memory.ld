@@ -1,6 +1,67 @@
+
+
+
+
+
+/* Compile time configuration of pins. */
+PROVIDE(__GPIO0__  = 0);
+PROVIDE(__GPIO1__  = 0);
+PROVIDE(__GPIO2__  = 0);
+PROVIDE(__GPIO3__  = 0);
+PROVIDE(__GPIO4__  = 0);
+PROVIDE(__GPIO5__  = 0);
+PROVIDE(__GPIO6__  = 0);
+PROVIDE(__GPIO7__  = 0);
+PROVIDE(__GPIO8__  = 0);
+PROVIDE(__GPIO9__  = 0);
+PROVIDE(__GPIO10__ = 0);
+PROVIDE(__GPIO11__ = 0);
+PROVIDE(__GPIO12__ = 0);
+PROVIDE(__GPIO13__ = 0);
+PROVIDE(__GPIO14__ = 0);
+PROVIDE(__GPIO15__ = 0);
+PROVIDE(__GPIO16__ = 0);
+PROVIDE(__GPIO17__ = 0);
+PROVIDE(__GPIO18__ = 0);
+PROVIDE(__GPIO19__ = 0);
+PROVIDE(__GPIO20__ = 0);
+PROVIDE(__GPIO21__ = 0);
+PROVIDE(__GPIO22__ = 0);
+PROVIDE(__GPIO23__ = 0);
+PROVIDE(__GPIO24__ = 0);
+PROVIDE(__GPIO25__ = 0);
+PROVIDE(__GPIO26__ = 0);
+PROVIDE(__GPIO27__ = 0);
+PROVIDE(__GPIO28__ = 0);
+PROVIDE(__GPIO29__ = 0);
+
+
+
+PINLOCK =   __GPIO0__  | __GPIO1__  | __GPIO2__  | __GPIO3__  | __GPIO4__  |
+            __GPIO5__  | __GPIO6__  | __GPIO7__  | __GPIO8__  | __GPIO9__  |
+            __GPIO10__ | __GPIO11__ | __GPIO12__ | __GPIO13__ | __GPIO14__ |
+            __GPIO15__ | __GPIO16__ | __GPIO17__ | __GPIO18__ | __GPIO19__ |
+            __GPIO20__ | __GPIO21__ | __GPIO22__ | __GPIO23__ | __GPIO24__ |
+            __GPIO25__ | __GPIO26__ | __GPIO27__ | __GPIO28__ | __GPIO29__;
+
+
+/* Frequency configurations. */
+PROVIDE(__XFREQ__ = 1000000);
+
+XFREQ = __XFREQ__;
+
+__DELAY__ = ((__XFREQ__ / 1000) + 128) / 256;
+
+__USBCONFIG__ = (6 << 16) | (5 << 12) | (1440000 / (__XFREQ__ / 1000));
+
+
+__HSLJ__ = (4 << 16) | (3 << 12) | (1600000 / (XFREQ / 1000));
+__HSLP__ = (3 << 16) | (1 << 12) | ( 400000 / (XFREQ / 1000));
+__LSLJ__ = (7 << 16) | (7 << 12) | (1600000 / (XFREQ / 1000));
+__LSLP__ = (4 << 16) | (3 << 12) | ( 400000 / (XFREQ / 1000));
+
+
 /* Memory map of he RP2040 */
-
-
 MEMORY {
 	/* Chip ROM FLASH. Read and execute. */
 	ROM(RX ) : ORIGIN = 0x00000000, LENGTH = 16K
@@ -113,6 +174,10 @@ SECTIONS {
 	.rodata (NOLOAD) : ALIGN(4)
 	{
 		*(.rodata .rodata.*);
+
+		KEEP(XFREQ);
+		KEEP(__DELAY__);
+
 		. = ALIGN(4);
 	} > FLASH
 
@@ -187,6 +252,8 @@ SECTIONS {
 		__ssysdata = .;
 
 		*(.systemdata .systemdata.*);
+
+		KEEP(PINLOCK);
 
 		. = ALIGN(4);
 	} > SRAM5 AT FLASH

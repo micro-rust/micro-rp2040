@@ -3,8 +3,6 @@
 //! Configures and allows the use of the pseudo-kernel's functions.
 
 
-
-
 #[link_section = ".vectortable.Reset0"]
 #[no_mangle]
 #[used]
@@ -14,7 +12,7 @@ static RESET0 : fn() -> ! = Reset0;
 
 fn Reset0() -> ! {
 	// Load RAM sections.
-	sections();
+	unsafe { sections(); }
 
 	// Initialize the clocks.
 	initialize();
@@ -89,7 +87,7 @@ unsafe fn sections() {
 /// Initialize the RP2040.
 fn initialize() {
 	// Initialization routine of the Reset peripheral.
-	unsafe { crate::power::RESET.init(); }
+	crate::power::RESET.init();
 
 	// Initialization routine of the Clocks peripheral.
 	unsafe { crate::time::CLOCKS.init(); }
@@ -100,11 +98,11 @@ fn initialize() {
 /// If there is no user code, hangs in a debug loop.
 fn jump() -> ! {
 	extern "C" {
-		static __MAINFN0 : fn() -> !;
+		static __MAINFN0 : extern fn() -> !;
 	}
 
-	match __MAINFN0 as u32 {
+	match unsafe { __MAINFN0 } as u32 {
 		0x00000000 => loop { micro::asm::bkpt::<255>(); },
-		_ => __MAINFN0(),
+		_ => unsafe { __MAINFN0() },
 	}
 }

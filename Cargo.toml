@@ -1,5 +1,5 @@
 [package]
-name = "rp2040"
+name = "micro-rp2040"
 version = "0.1.0"
 edition = "2018"
 
@@ -63,6 +63,11 @@ xosc-15MHz = ["xosc-defined"]
 
 flash-defined = []
 
+at25sf128a = ["flash-defined"]
+is25lp080  = ["flash-defined"]
+w25q080    = ["flash-defined"]
+w25z10cl   = ["flash-defined"]
+
 flash-2MB  = ["flash-defined"]
 flash-4MB  = ["flash-defined"]
 flash-8MB  = ["flash-defined"]
@@ -113,7 +118,8 @@ adafruit-qtpy = [
 
 # Raspberry Pico.
 raspberry-pico = [
-	"flash-2MB", "xosc-12MHz",
+	"flash-2MB", "w25q080",
+	"xosc-12MHz",
 	"vsys-pin", "led-pin",
 ]
 

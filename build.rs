@@ -86,6 +86,10 @@ pub static CODE : [u8; 256] = [\n
 	let mut file = File::create(rust).expect("Could not create Rust module file.");
 
 	write!(file, "{}", code).expect("Could not write to Rust file.");
+
+
+	// Delete the binary file.
+	fs::remove_file(bin).expect("Could not delete binary file after operation.");
 }
 
 fn extract(elf: &PathBuf, bin: &PathBuf) {
@@ -103,6 +107,9 @@ fn extract(elf: &PathBuf, bin: &PathBuf) {
 	if !extraction.status.success() {
 		panic!("Could not extract .text section. Objcopy failed.");
 	}
+
+	// Delete the ELF file.
+	fs::remove_file(elf).expect("Could not delete ELF file after operation.");
 }
 
 fn compile(asm: &PathBuf, elf: &PathBuf) {
