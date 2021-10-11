@@ -11,7 +11,7 @@ pub static mut CLOCKS : Clocks = Clocks::empty();
 
 
 /// RP 2040 Clock configuration.
-mod clocks;
+pub mod clocks;
 
 pub use self::clocks::Clocks;
 

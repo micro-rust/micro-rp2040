@@ -19,13 +19,13 @@ use self::outputs::ClockOutputs;
 
 pub struct Clocks {
     /// Clock sources of the RP2040.
-    sources: ClockSources,
+    pub(crate) sources: ClockSources,
 
     /// Clock outputs of the RP2040.
-    outputs: ClockOutputs,
+    pub(crate) outputs: ClockOutputs,
 
     /// Array with all the frequencies of the RP2040 clocks.
-    freqs: [u32; 16],
+    pub(crate) freqs: [u32; 16],
 }
 
 

@@ -7,11 +7,16 @@
 #![feature(generic_const_exprs)]
 #![feature(const_raw_ptr_deref)]
 #![feature(const_fn_trait_bound)]
+#![feature(inherent_associated_types)]
+
 
 #![allow(dead_code)]
 #![allow(incomplete_features)]
 #![allow(non_snake_case)]
 
+
+/// Communication peripherals.
+pub mod comm;
 
 /// GP I/O Pins module.
 pub mod pins;
