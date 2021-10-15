@@ -9,6 +9,7 @@ mod core1;
 
 
 
+#[inline(never)]
 pub(self) unsafe fn load(mut s: *mut u32, e: *mut u32, mut l: *const u32) {
     use core::ptr::{
         read_volatile as read,
@@ -24,6 +25,7 @@ pub(self) unsafe fn load(mut s: *mut u32, e: *mut u32, mut l: *const u32) {
     }
 }
 
+#[inline(never)]
 pub(self) unsafe fn zero(mut s: *mut u32, e: *mut u32) {
     use core::ptr::write_volatile as write;
 

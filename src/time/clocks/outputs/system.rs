@@ -28,13 +28,9 @@ impl SystemClock {
     }
 
     /// Initializes the System Clock to the XOSC.
+    #[inline(never)]
     pub(crate) fn init(&mut self) {
-        extern "C" { static XFREQ : u32; }
-
         let mut CLOCK: CLOCK = Peripheral::get();
-
-        // Clear divider to set as 2^16.
-        CLOCK[1].write(0);
 
         // Switch to the Reference Clock.
         CLOCK[0].write(0);

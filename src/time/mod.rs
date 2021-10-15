@@ -18,4 +18,4 @@ pub use self::clocks::Clocks;
 /// ARM Cortex M0+ System tick peripheral.
 mod systick;
 
-pub use self::systick::*;
+pub use self::systick::Systick;

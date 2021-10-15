@@ -6,12 +6,13 @@
 #![allow(non_camel_case_types)]
 
 
+
+pub mod led;
 pub mod uart;
 
 
 use crate::raw::AtomicRegister;
 use crate::sync::Syslock;
-
 
 use micro::Register;
 
@@ -48,101 +49,9 @@ impl<const N: u32> Gpio<N> {
 
 
 /// Common trait for all pins to control state and configuration.
-pub(crate) trait PinTrait {
+pub trait PinTrait {
     const IO  : u32;
     const PAD : u32;
-
-
-    /*
-
-    /// Set the function select.
-    fn funcsel(&self) {
-        // Reference to the IO Register.
-        let io: &'static mut [AtomicRegister<u32>; 2] = unsafe { &mut *(Self::IO as *mut _) };
-
-        // Set the function.
-        io[1].clear(0x1F);
-        io[1].set(Self::FUNCSEL & 0x1F);
-    }
-
-    /// Set fast/slow slew rate.
-    #[inline(always)]
-    fn slewfast(&self, s: bool) {
-        // Reference to the PAD register.
-        let pad: &'static mut AtomicRegister<u32> = unsafe { &mut *(Self::PAD as *mut _) };
-
-        // Set fast slew rate.
-        if s { pad.set(1)   }
-        else { pad.clear(1) }
-    }
-
-    /// Enable/Disable Schmitt trigger.
-    #[inline(always)]
-    fn schmitt(&self, s: bool) {
-        // Reference to the PAD register.
-        let pad: &'static mut AtomicRegister<u32> = unsafe { &mut *(Self::PAD as *mut _) };
-
-        // Set fast slew rate.
-        if s { pad.set(1 << 1)   }
-        else { pad.clear(1 << 1) }
-    }
-
-    /// Enable Pull Up resistor.
-    #[inline(always)]
-    fn pullup(&self) {
-        // Reference to the PAD register.
-        let pad: &'static mut AtomicRegister<u32> = unsafe { &mut *(Self::PAD as *mut _) };
-
-        // Enable pull up.
-        pad.set(1 << 3);
-        pad.clear(1 << 2);
-    }
-
-    /// Enable Pull Down resistor.
-    #[inline(always)]
-    fn pulldown(&self) {
-        // Reference to the PAD register.
-        let pad: &'static mut AtomicRegister<u32> = unsafe { &mut *(Self::PAD as *mut _) };
-
-        // Enable pull down.
-        pad.set(1 << 2);
-        pad.clear(1 << 3);
-    }
-
-    /// Enable/Disable input in this pin.
-    #[inline(always)]
-    fn input(&self, s: bool) {
-        // Reference to the PAD register.
-        let pad: &'static mut AtomicRegister<u32> = unsafe { &mut *(Self::PAD as *mut _) };
-
-        if s { pad.set(1 << 6); }
-        else { pad.clear(1 << 6); }
-    }
-
-    /// Enable/Disable output in this pin.
-    #[inline(always)]
-    fn output(&self, s: bool) {
-        // Reference to the IO Register.
-        let io: &'static mut [AtomicRegister<u32>; 2] = unsafe { &mut *(Self::IO as *mut _) };
-
-        // Reference to the PAD register.
-        let pad: &'static mut AtomicRegister<u32> = unsafe { &mut *(Self::PAD as *mut _) };
-
-        if s { pad.clear(1 << 7); io[1].set(0x3 << 12);   }
-        else { pad.set(1 << 7);   io[1].clear(0x3 << 12); io[1].set(0x2 << 12); }
-    }
-
-    /// Sets the drive strength of the pin.
-    #[inline(always)]
-    fn strength(&self, s: DriveStrength) {
-        // Reference to the PAD register.
-        let pad: &'static mut AtomicRegister<u32> = unsafe { &mut *(Self::PAD as *mut _) };
-
-        pad.clear(0x3 << 4);
-        pad.set((s as u32) << 4);
-    }
-
-    */
 }
 
 

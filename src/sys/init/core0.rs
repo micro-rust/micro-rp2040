@@ -17,6 +17,8 @@ fn Reset0() -> ! {
     // Initialize the clocks.
     initialize();
 
+    micro::asm::bkpt::<2>();
+
     // Jump to user code.
     jump()
 }

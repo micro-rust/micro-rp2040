@@ -19,5 +19,5 @@ pub use crate::pins::uart::UartPin;
 
 pub use self::config::UartConfig;
 pub use self::frame::UartFrame;
-pub use self::uart::{ UartAsync, Uart };
+pub use self::uart::*;
 

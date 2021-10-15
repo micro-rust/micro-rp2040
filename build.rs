@@ -178,6 +178,8 @@ fn linker() {
 
 	// Copy the linker.
 	outfile.write_all(&fs::read(inpath).expect("Could not read contents of memory.ld.")).expect("Could not write contents to link.x.");
+
+	println!("cargo:rustc-link-search={}", outdir.display());
 }
 
 

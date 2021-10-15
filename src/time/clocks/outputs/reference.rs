@@ -1,6 +1,7 @@
 //! Reference Clock wrapper.
 
 
+use crate::features::__XFREQ__;
 use crate::raw::AtomicRegister;
 use crate::sync::Syslock;
 use crate::time::CLOCKS;
@@ -29,24 +30,19 @@ impl Reference {
 
     /// Initializes the Reference Clock to the XOSC.
     pub(crate) fn init(&mut self) {
-        extern "C" { static XFREQ : u32; }
-
         let mut CLOCK: CLOCK = Peripheral::get();
-
-        // Clear divider to set as 2^16.
-        CLOCK[1].write(0);
 
         // Switch to the ROSC.
         CLOCK[0].write(0);
 
-        // Wait until multiplexer has fininshed change.
+        // Wait until multiplexer has finished change.
         while CLOCK[2].read() == 0 { nop() }
 
         // Write the divider.
         CLOCK[1].write(1 << 8);
 
         // Setup information.
-        unsafe { CLOCKS.freqs[Clock::Reference.index()] = XFREQ };
+        unsafe { CLOCKS.freqs[Clock::Reference.index()] = __XFREQ__ };
         self.0.info = (Clock::Rosc, Clock::PllUsb);
     }
 

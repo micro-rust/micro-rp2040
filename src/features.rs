@@ -24,6 +24,21 @@ pub static __XFREQ__ : u32 = 15_000_000;
 
 
 
+#[cfg(feature = "adafruit")]
+static __XOSCMUL__ : u32 = 64;
+
+#[cfg(not(feature = "adafruit"))]
+static __XOSCMUL__ : u32 = 1;
+
+
+
+
+#[no_mangle]
+#[used]
+pub static __DELAY__ : u32 = (((__XFREQ__ / 1000) + 128) / 256) * __XOSCMUL__;
+
+
+
 
 #[cfg(feature = "flash-2MB" )]
 #[no_mangle]

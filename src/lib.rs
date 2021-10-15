@@ -18,11 +18,18 @@
 /// Communication peripherals.
 pub mod comm;
 
+/// Interrupt module.
+#[macro_use]
+pub mod ints;
+
 /// GP I/O Pins module.
 pub mod pins;
 
 /// Power and Reset peripherals.
 pub mod power;
+
+/// Prelude module.
+pub mod prelude;
 
 /// Synchronization module.
 pub mod sync;

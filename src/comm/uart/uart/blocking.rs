@@ -5,7 +5,7 @@ use crate::comm::uart::*;
 use crate::pins::uart::*;
 use crate::power::{ RESET, ResetId };
 use crate::raw::AtomicRegister;
-use crate::sys::RESOURCES;
+use crate::sys::Resource;
 use crate::time::{ CLOCKS, clocks::Clock };
 
 
@@ -36,7 +36,7 @@ pub struct Uart<RX: UartRxPin, TX: UartTxPin, CTS: UartCtsPin, RTS: UartRtsPin> 
 impl<RX: UartRxPin + Uart0Pin, TX: UartTxPin + Uart0Pin, CTS: UartCtsPin + Uart0Pin, RTS: UartRtsPin + Uart0Pin> Uart<RX, TX, CTS, RTS> {
     /// Internal method to acquire the UART 0 peripheral.
     fn acquire() -> Result<(), ()> {
-        match RESOURCES.reserve(Resource::Uart0) {
+        match Resource::UART0.reserve() {
             Ok(_) => match unsafe { CLOCKS.outputs.peripheral.freeze() } {
                 Some(_) => Ok( RESET.cycle(ResetId::UART0) ),
                 _ => Err(())
@@ -52,7 +52,11 @@ impl<RX: UartRxPin + Uart0Pin, TX: UartTxPin + Uart0Pin, CTS: UartCtsPin + Uart0
         Self::acquire()?;
 
         // Configure the RX and RTS pins.
-        Self::__pins__(Some(rx), None, None, rts);
+        if let Some(ref pin) = rts {
+            pin.config();
+        }
+
+        rx.config();
 
         // Configure RX only.
         let baudrate = Self::__rxonly__(0x40034000, cfg, baud);
@@ -66,7 +70,11 @@ impl<RX: UartRxPin + Uart0Pin, TX: UartTxPin + Uart0Pin, CTS: UartCtsPin + Uart0
         Self::acquire()?;
 
         // Configure the RX and RTS pins.
-        Self::__pins__(None, Some(tx), cts, None);
+        if let Some(ref pin) = cts {
+            pin.config();
+        }
+
+        tx.config();
 
         // Configure RX only.
         let baudrate = Self::__txonly__(0x40034000, cfg, baud);
@@ -80,7 +88,16 @@ impl<RX: UartRxPin + Uart0Pin, TX: UartTxPin + Uart0Pin, CTS: UartCtsPin + Uart0
         Self::acquire()?;
 
         // Configure the RX and RTS pins.
-        Self::__pins__(Some(rx), Some(tx), cts, rts);
+        if let Some(ref pin) = rts {
+            pin.config();
+        }
+
+        if let Some(ref pin) = cts {
+            pin.config();
+        }
+
+        rx.config();
+        tx.config();
 
         // Configure duplex only.
         let baudrate = Self::__txonly__(0x40034000, cfg, baud);
@@ -157,10 +174,30 @@ impl<RX: UartRxPin, TX: UartTxPin, CTS: UartCtsPin, RTS: UartRtsPin> Uart<RX, TX
 
     fn __config__(uart: u32, cfg: UartConfig, baud: u32, enable: u32) -> u32 {
         // Reference to the register block.
-        let mut uart: &'static mut [AtomicRegister<u32>; 19] = unsafe { &mut *(uart as *mut _) };
+        let uart: &'static mut [AtomicRegister<u32>; 19] = unsafe { &mut *(uart as *mut _) };
+
+        // Get peripheral clock (already frozen).
+        let peri = unsafe { CLOCKS.freqs[Clock::Peripheral.index()] };
 
         // Set the baudrate.
-        let baudrate = Self::__baudrate__(uart, baud);
+        let div = (8 * peri) / baud;
+
+        let (ibrd, fbrd) = match div >> 7 {
+            0 => (1, 0),
+            65535.. => (65535, 0),
+            x => (x, ((div & 0x7F) + 1) / 2 ),
+        };
+
+        // Load IBRD and FBRD.
+        uart[ 9].write(ibrd);
+        uart[10].write(fbrd);
+
+        // Dummy LCR H write.
+        uart[11].write(0);
+
+        let baudrate = (4 * peri) / ((64 * ibrd) + fbrd);
+
+
 
         // Set the format and FIFOs.
         uart[11].write(cfg.0);

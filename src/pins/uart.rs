@@ -30,10 +30,10 @@ impl<const N : u32> PinTrait for UartPin<N> {
 
 
 /// Common trait for UART 0 pins.
-pub(crate) trait Uart0Pin {}
+pub trait Uart0Pin {}
 
 /// Common trait for UART 1 pins.
-pub(crate) trait Uart1Pin {}
+pub trait Uart1Pin {}
 
 
 impl Uart0Pin for UartPin<0>  {}
@@ -75,7 +75,7 @@ impl Uart0Pin for UartPin<29> {}
 
 
 /// Common trait for UART TX pins.
-pub(crate) trait UartTxPin: PinTrait {
+pub trait UartTxPin: PinTrait {
     #[inline(always)]
     fn config(&self) {
         // Reference to the PAD register.
@@ -109,7 +109,7 @@ impl UartTxPin for UartPin<28> {}
 
 
 /// Common trait for UART RX pins.
-pub(crate) trait UartRxPin: PinTrait {
+pub trait UartRxPin: PinTrait {
     #[inline(always)]
     fn config(&self) {
         // Reference to the PAD register.
@@ -143,7 +143,7 @@ impl UartRxPin for UartPin<29> {}
 
 
 /// Common trait for UART CTS pins.
-pub(crate) trait UartCtsPin: PinTrait {
+pub trait UartCtsPin: PinTrait {
     #[inline(always)]
     fn config(&self) {
         // Reference to the PAD register.
@@ -176,7 +176,7 @@ impl UartCtsPin for UartPin<26> {}
 
 
 /// Common trait for UART CTS pins.
-pub(crate) trait UartRtsPin: PinTrait {
+pub trait UartRtsPin: PinTrait {
     #[inline(always)]
     fn config(&self) {
         // Reference to the PAD register.

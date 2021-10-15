@@ -1,6 +1,7 @@
 //! Crystal Oscillator wrapper.
 
 
+use crate::features::{ __XFREQ__, __DELAY__ };
 use crate::raw::AtomicRegister;
 use crate::sync::Syslock;
 use crate::time::CLOCKS;
@@ -30,25 +31,27 @@ impl Xosc {
     }
 
     /// Initializes the Crystal Oscillator.
+    #[inline(never)]
     pub(crate) fn init(&mut self) {
-        extern "C" {
-            static XFREQ : u32;
-            static __DELAY__ : u32;
-        }
+        let mut xosc: XOSC = Peripheral::get();
 
-        let mut XOSC: XOSC = Peripheral::get();
+        // Set input frequency.
+        xosc[0].write(0xAA0);
 
         // Set startup delay.
-        unsafe { XOSC[3].write(__DELAY__); }
+        xosc[3].write(__DELAY__);
 
         // Set enable status and frequency range.
-        XOSC[0].write( (0xFAB << 12) | 0xAA0 );
+        xosc[0].write( (0xFAB << 12) | 0xAA0 );
 
         // Wait for stable XOSC.
-        while (XOSC[1].read() >> 31) == 0 { nop() }
+        while (xosc[1].read() >> 31) == 0 { nop() }
+
+        // Clear possible initial bad write.
+        xosc[1].set(1 << 24);
 
         // Set the frequencies.
-        unsafe { CLOCKS.freqs[Clock::Xosc.index()] = XFREQ; }
+        unsafe { CLOCKS.freqs[Clock::Xosc.index()] = __XFREQ__; }
     }
 
     /// Returns the current frequency.

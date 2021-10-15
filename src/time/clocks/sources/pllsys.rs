@@ -1,6 +1,7 @@
 //! System PLL wrapper.
 
 
+use crate::features::__XFREQ__;
 use crate::power::{ RESET, ResetId };
 use crate::raw::AtomicRegister;
 use crate::sync::Syslock;
@@ -13,14 +14,11 @@ use micro::asm::nop;
 
 
 
-extern "C" {
-    static XFREQ : u32;
+static __HSLJ__: u32 = (4 << 16) | (3 << 12) | (1600000 / (__XFREQ__ / 1000));
+static __HSLP__: u32 = (3 << 16) | (1 << 12) | ( 400000 / (__XFREQ__ / 1000));
+static __LSLJ__: u32 = (7 << 16) | (7 << 12) | (1600000 / (__XFREQ__ / 1000));
+static __LSLP__: u32 = (4 << 16) | (3 << 12) | ( 400000 / (__XFREQ__ / 1000));
 
-    static __HSLJ__ : u32;
-    static __HSLP__ : u32;
-    static __LSLJ__ : u32;
-    static __LSLP__ : u32;
-}
 
 /// Maximum VCO frequency in MHz.
 const VCOMAX : u32 = 1600;
@@ -59,20 +57,20 @@ impl PllSystem {
 
         // Load reference divisor and feedback divisor.
         PLL[0].write(1);
-        unsafe { PLL[2].write(__HSLJ__) };
+        PLL[2].write(__HSLJ__);
 
         // Turn on PLL and VCO domains and wait for stabilization.
-        PLL[1].set((1 << 5) | 1);
+        PLL[1].clear((1 << 5) | 1);
         while PLL[0].read() >> 31 == 0 { nop() }
 
         // Load post dividers.
-        unsafe { PLL[3].write(__HSLJ__) };
+        PLL[3].write(__HSLJ__);
 
         // Turn on post dividers.
-        PLL[1].set(1 << 3);
+        PLL[1].clear(1 << 3);
 
         // Set the frequency.
-        unsafe { CLOCKS.freqs[Clock::PllSys.index()] = ( XFREQ * (PLL[2].read() & 0xFFF) ) / 12; }
+        unsafe { CLOCKS.freqs[Clock::PllSys.index()] = ( __XFREQ__ * (PLL[2].read() & 0xFFF) ) / 12; }
     }
 
 
@@ -80,37 +78,33 @@ impl PllSystem {
     /// Produces a 133.33 MHz low jitter output.
     #[inline(always)]
     pub fn hslj(&self) -> Result<(), ()> {
-        unsafe { self.load(__HSLJ__) }
+        self.load(__HSLJ__)
     }
 
     /// Loads a precomputed High Speed - Low Power PLL configuration.
     /// Produces a 133.33 MHz output.
     #[inline(always)]
     pub fn hslp(&self) -> Result<(), ()> {
-        unsafe { self.load(__HSLP__) }
+        self.load(__HSLP__)
     }
 
     /// Loads a precomputed High Speed - Low Jitter PLL configuration.
     /// Produces a 32.65 MHz output.
     #[inline(always)]
     pub fn lslj(&self) -> Result<(), ()> {
-        unsafe { self.load(__LSLJ__) }
+        self.load(__LSLJ__)
     }
 
     /// Precomputed High Speed - Low Power PLL configuration.
     /// Produces a 33.33 MHz output.
     #[inline(always)]
     pub fn lslp(&self) -> Result<(), ()> {
-        unsafe { self.load(__LSLP__) }
+        self.load(__LSLP__)
     }
 
 
     /// Load shte given configuration data.
     fn load(&self, cfg: u32) -> Result<(), ()> {
-        extern "C" {
-            static XFREQ : u32;
-        }
-
         let mut PLL: PLL = Peripheral::get();
 
         match Syslock::acquire() {
@@ -134,7 +128,7 @@ impl PllSystem {
                     PLL[1].set(1 << 3);
 
                     // Set the frequency.
-                    unsafe { CLOCKS.freqs[Clock::PllSys.index()] = ( XFREQ * (cfg & 0xFFF) ) / 12; }
+                    unsafe { CLOCKS.freqs[Clock::PllSys.index()] = ( __XFREQ__ * (cfg & 0xFFF) ) / 12; }
 
                     Ok(())
                 },
@@ -180,6 +174,6 @@ impl PllSystem {
     pub(super) fn off(&mut self) {
         let mut PLL: PLL = Peripheral::get();
 
-        PLL[1].write(0);
+        PLL[1].write(0xFF);
     }
 }
