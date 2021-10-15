@@ -2,6 +2,8 @@
 
 
 
+pub use crate::error::*;
+
 pub use crate::pins::PinTrait;
 
 

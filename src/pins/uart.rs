@@ -204,3 +204,25 @@ impl UartRtsPin for UartPin<15> {}
 impl UartRtsPin for UartPin<19> {}
 impl UartRtsPin for UartPin<23> {}
 impl UartRtsPin for UartPin<27> {}
+
+
+
+// NULL Pin implementation.
+impl Uart0Pin for NULLPIN {}
+impl Uart1Pin for NULLPIN {}
+
+impl UartRxPin for NULLPIN {
+    fn config(&self) {}
+}
+
+impl UartTxPin for NULLPIN {
+    fn config(&self) {}
+}
+
+impl UartCtsPin for NULLPIN {
+    fn config(&self) {}
+}
+
+impl UartRtsPin for NULLPIN {
+    fn config(&self) {}
+}

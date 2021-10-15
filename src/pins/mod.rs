@@ -20,6 +20,8 @@ use micro::Register;
 pub use self::pinout::*;
 
 
+pub(crate) type NULLPIN = Gpio<31>;
+
 
 pub struct Gpio<const N: u32>;
 

@@ -18,6 +18,12 @@
 /// Communication peripherals.
 pub mod comm;
 
+/// DMA Peripheral.
+pub mod dma;
+
+/// Error module.
+pub mod error;
+
 /// Interrupt module.
 #[macro_use]
 pub mod ints;

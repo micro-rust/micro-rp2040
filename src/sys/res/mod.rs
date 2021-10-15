@@ -1,6 +1,7 @@
 //! Resources module.
 
 
+use crate::error::Error;
 use crate::sync::Syslock;
 
 
@@ -14,7 +15,7 @@ pub trait SystemResource: Sized {
     const LOCKOFF: u8;
 
     /// Function to acquire the resource.
-    fn acquire() -> Result<Self, ()>;
+    fn acquire() -> Result<Self, Error>;
 }
 
 

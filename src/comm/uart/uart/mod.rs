@@ -1,7 +1,7 @@
 //! UART implementations.
 
 
-mod asynchronous;
+//mod asynchronous;
 mod blocking;
 
 

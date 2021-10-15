@@ -11,7 +11,6 @@ mod init;
 mod res;
 
 
-
 pub use self::res::SystemResource;
 pub use self::res::Resource;
 
