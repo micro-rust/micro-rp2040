@@ -12,6 +12,8 @@ use micro::Register;
 static mut LOCK : Peripheral<u32, SIORegister<u32>, 31, 0xD0000100> = Peripheral::get();
 
 
+/// Hardware spinlock. Can only access spinlocks 0-30.
+/// Spinlock 31 is reserved for System use.
 pub struct Spinlock<const N: usize>;
 
 impl<const N: usize> Spinlock<N> {

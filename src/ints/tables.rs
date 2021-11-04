@@ -1,4 +1,8 @@
-//! Vector Table module.
+//! IRQ and Exception tables.
+
+
+pub(super) type EXCTable = micro::int::EXCTable;
+pub(super) type IRQTable = micro::int::IRQTable<32>;
 
 
 extern "C" {

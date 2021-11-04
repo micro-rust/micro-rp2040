@@ -93,6 +93,9 @@ fn initialize() {
 
     // Initialization routine of the Clocks peripheral.
     unsafe { crate::time::CLOCKS.init(); }
+
+    // Initialize interrupts.
+    crate::ints::InterruptSystem::init();
 }
 
 

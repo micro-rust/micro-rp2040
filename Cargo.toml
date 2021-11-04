@@ -74,6 +74,15 @@ flash-8MB  = ["flash-defined"]
 flash-16MB = ["flash-defined"]
 
 
+# Other features.
+# ################################################################
+
+skip-address-safety-checks = []
+skip-size-safety-checks = []
+
+skip-safety-checks = ["skip-address-safety-checks", "skip-size-safety-checks"]
+
+
 
 
 # Board features.

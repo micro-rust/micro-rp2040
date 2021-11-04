@@ -67,12 +67,6 @@ PINLOCK =   __GPIO00__ | __GPIO01__ | __GPIO02__ | __GPIO03__ | __GPIO04__ |
             __GPIO25__ | __GPIO26__ | __GPIO27__ | __GPIO28__ | __GPIO29__;
 
 
-/* Frequency configurations. */
-EXTERN(__XFREQ__);
-
-__DELAY__ = ((__XFREQ__ / 1000) + 128) / 256;
-
-
 /* Memory map of he RP2040 */
 MEMORY {
 	/* Chip ROM FLASH. Read and execute. */
@@ -186,10 +180,6 @@ SECTIONS {
 	.rodata : ALIGN(4)
 	{
 		*(.rodata .rodata.*);
-
-		LONG(__XFREQ__);
-		LONG(__DELAY__);
-
 		. = ALIGN(4);
 	} > FLASHCU
 
@@ -206,7 +196,7 @@ SECTIONS {
 		*(.data .data.*);
 
 		. = ALIGN(4);
-	} > SRAM1 AT >FLASHCU
+	} > SRAM0 AT >FLASHCU
 
 	. = ALIGN(4);
 

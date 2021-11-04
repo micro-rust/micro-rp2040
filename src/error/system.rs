@@ -16,6 +16,17 @@ pub enum SystemError {
     /// The DMA Channel is already reserved.
     DMAChannelNotAvailable,
 
+    /// The memory region is not in RAM.
+    NotRamRegion,
+
+    /// The buffer does not fit in RAM.
+    BufferDoesNotFit,
+
+    /// Two buffers are not of the same size.
+    UnequalBufferSize,
+
+    BufferOverlap,
+
     /// Unknown / Other error.
     Other,
 }

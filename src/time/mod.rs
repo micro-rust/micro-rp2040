@@ -19,3 +19,8 @@ pub use self::clocks::Clocks;
 mod systick;
 
 pub use self::systick::Systick;
+
+pub mod alarm;
+pub mod rtc;
+pub mod timer;
+pub mod watchdog;

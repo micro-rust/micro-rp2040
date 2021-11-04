@@ -15,6 +15,8 @@
 #![allow(non_snake_case)]
 
 
+mod alloc;
+
 /// Communication peripherals.
 pub mod comm;
 
@@ -25,7 +27,6 @@ pub mod dma;
 pub mod error;
 
 /// Interrupt module.
-#[macro_use]
 pub mod ints;
 
 /// GP I/O Pins module.

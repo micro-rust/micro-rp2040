@@ -19,6 +19,12 @@ pub enum DMAError {
     /// DMA Control block is incompatible with Stream.
     CtrlBlockIncompatible,
 
+    /// The Stream cannot resume, usually due to an error.
+    StreamCannotResume,
+
+    /// The given buffers have unequal size.
+    UnequalBufferSize,
+
     /// Unknown / Other error.
     Other,
 }
