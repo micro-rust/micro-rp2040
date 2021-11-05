@@ -57,13 +57,13 @@ fn usermain() -> ! {
     systick.enable();
 
     loop {
-    	// You can do stuff here.
+        // You can do stuff here.
         // The LED will blink on its own.
         // I, for example, am calculating what's 2 + 2, cause my calculator broke.
-    	let x = 2;
-    	let y = 2;
+        let x = 2;
+        let y = 2;
 
-    	let z = x + y;
+        let z = x + y;
     }
 }
 
