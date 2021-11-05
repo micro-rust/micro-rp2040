@@ -5,15 +5,6 @@
 #![deny(warnings)]
 
 
-#[link_section = ".systembss.CLOCKS"]
-#[used]
-pub static mut CLOCKS : Clocks = Clocks::empty();
-
-
-/// RP 2040 Clock configuration.
-pub mod clocks;
-
-pub use self::clocks::Clocks;
 
 /// ARM Cortex M0+ System tick peripheral.
 mod systick;

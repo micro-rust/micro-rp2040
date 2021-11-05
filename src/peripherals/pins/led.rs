@@ -10,9 +10,9 @@ use super::*;
 
 
 /// UART Pin object. Can only be moved.
-pub struct LedPin<const N: u32>;
+pub struct LedPin<const N: usize>;
 
-impl<const N: u32> LedPin<N> {
+impl<const N: usize> LedPin<N> {
     const FUNCSEL : u32 = 5;
 
     #[inline(always)]
@@ -56,7 +56,7 @@ impl<const N: u32> LedPin<N> {
 
 
 
-impl<const N : u32> PinTrait for LedPin<N> {
-    const IO  : u32 = 0x40014000 + {0x08 * N};
-    const PAD : u32 = 0x4001C000 + {0x04 * N} + 0x04;
+impl<const N : usize> PinTrait for LedPin<N> {
+    const IO  : usize = 0x40014000 + {0x08 * N};
+    const PAD : usize = 0x4001C000 + {0x04 * N} + 0x04;
 }

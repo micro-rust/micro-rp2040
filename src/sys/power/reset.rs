@@ -46,6 +46,23 @@ impl ResetSystem {
         }
     }
 
+    /// Finishes intializing the remaining peripherals.
+    pub(crate) fn finish(&self) {
+        static UNRES : ResetId =
+                ResetId::ADC + ResetId::RTC +
+                ResetId::SPI0 + ResetId::SPI1 +
+                ResetId::UART0 + ResetId::UART1 +
+                ResetId::USBCTRL;
+
+        unsafe {
+            // Unreset all but ADC, RTC, SPIx and UARTx.
+            RESET[0].clear(u32::from(UNRES));
+
+            // Wait until all periopherals are accessible.
+            while (RESET[2].read() & u32::from(UNRES)) == 0 { micro::asm::nop(); }
+        }
+    }
+
     /// Puts the given peripherals in Reset.
     pub fn reset(&self, id: ResetId) {
         unsafe { RESET[0].set(u32::from(id)) };

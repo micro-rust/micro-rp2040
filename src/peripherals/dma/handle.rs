@@ -97,6 +97,12 @@ impl DMAHandle {
         while (unsafe { read(self as *const Self as *const u32) } & (Self::ABORT | Self::DONE | Self::ERROR)) == 0 { nop() }
     }
 
+    /// Returns `true` if the stream is ready.
+    #[inline(always)]
+    pub(crate) fn ready(&self) -> bool {
+        (self.0 & 0x7FFF0) == 0
+    }
+
     /// Sets the aborted flag, clears the BUSY flag.
     #[inline(always)]
     pub(crate) fn abort(&mut self) {

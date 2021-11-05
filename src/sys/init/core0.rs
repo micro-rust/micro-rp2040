@@ -90,10 +90,17 @@ fn initialize() {
     crate::sys::power::RESET.init();
 
     // Initialization routine of the Clocks peripheral.
-    unsafe { crate::time::CLOCKS.init(); }
+    unsafe { crate::sys::CLOCKS.init(); }
+
+    // Initialize the remaining peripherals.
+    crate::sys::power::RESET.finish();
 
     // Initialize interrupts.
     crate::sys::ints::InterruptSystem::init();
+
+    for i in 0..16 {
+        unsafe { crate::sys::TESTCLOCKS[i] = crate::sys::CLOCKS.freqs[i] }
+    }
 }
 
 

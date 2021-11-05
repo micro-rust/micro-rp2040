@@ -11,8 +11,10 @@ pub mod led;
 pub mod uart;
 
 
+use crate::error::SystemError;
 use crate::raw::AtomicRegister;
 use crate::sync::Syslock;
+use crate::sys::SystemResource;
 
 use micro::Register;
 
@@ -20,29 +22,13 @@ use micro::Register;
 pub use self::pinout::*;
 
 
-pub(crate) type NULLPIN = Gpio<31>;
+pub type NULLPIN = Gpio<31>;
 
 
-pub struct Gpio<const N: u32>;
+pub struct Gpio<const N: usize>;
 
 
-impl<const N: u32> Gpio<N> {
-    /// Acquires the pin at runtime if available.
-    pub fn acquire() -> Option<Self> {
-        extern "C" {
-            static PINLOCK : u32;
-        }
-
-        match Syslock::acquire() {
-            Some(_) => match (unsafe { PINLOCK } >> N) & 1 {
-                0 => Some(Self),
-                _ => None,
-            },
-
-            _ => None,
-        }
-    }
-
+impl<const N: usize> Gpio<N> {
     /// DO NOT USE THIS METHOD.
     pub unsafe fn reserve() -> Self {
         Self
@@ -50,16 +36,34 @@ impl<const N: u32> Gpio<N> {
 }
 
 
-/// Common trait for all pins to control state and configuration.
-pub trait PinTrait {
-    const IO  : u32;
-    const PAD : u32;
+impl<const N: usize> SystemResource for Gpio<N> {
+    fn acquire() -> Result<Self, SystemError> {
+        extern "C" {
+            static PINLOCK : u32;
+        }
+
+        match Syslock::acquire() {
+            Some(_) => match (unsafe { PINLOCK } >> N) & 1 {
+                0 => Ok(Self),
+                _ => Err( SystemError::PeripheralNotAvailable ),
+            },
+
+            _ => Err( SystemError::NoSystemLock ),
+        }
+    }
 }
 
 
-impl<const N: u32> PinTrait for Gpio<N> {
-    const IO  : u32 = 0x40014000 + {0x08 * N};
-    const PAD : u32 = 0x4001C000 + {0x04 * N} + 0x04;
+/// Common trait for all pins to control state and configuration.
+pub trait PinTrait {
+    const IO  : usize;
+    const PAD : usize;
+}
+
+
+impl<const N: usize> PinTrait for Gpio<N> {
+    const IO  : usize = 0x40014000 + {0x08 * N};
+    const PAD : usize = 0x4001C000 + {0x04 * N} + 0x04;
 }
 
 

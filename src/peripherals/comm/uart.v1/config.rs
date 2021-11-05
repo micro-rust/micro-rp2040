@@ -13,32 +13,6 @@ impl UartConfig {
         Self(1 << 4)
     }
 
-    /// Creates a new configuration.
-    #[inline(always)]
-    pub const fn create(bits: u8, parity: Option<bool>, stop: u8) -> Self {
-        let mut cfg = match bits {
-            0..=5 => 0b00,
-            6 => 0b01,
-            7 => 0b10,
-            _ => 0b11,
-        };
-
-        cfg <<= 5;
-
-        match parity {
-            Some(false) => cfg |= 1 << 2,
-            Some(true) => (),
-            _ => cfg |= 1 << 1,
-        }
-
-        match stop {
-            0..=1 => (),
-            _ => cfg |= 1 << 3,
-        }
-
-        Self(cfg | (1 << 4))
-    }
-
     /// Sets the frame size to 5 bits.
     #[inline(always)]
     pub const fn bits5(self) -> Self {
@@ -91,12 +65,5 @@ impl UartConfig {
     #[inline(always)]
     pub const fn stop2(self) -> Self {
         Self( self.0 | (1 << 3) )
-    }
-}
-
-
-impl core::convert::From<UartConfig> for u32 {
-    fn from(cfg: UartConfig) -> u32 {
-        cfg.0
     }
 }
