@@ -8,14 +8,28 @@ mod boot2;
 
 mod init;
 
-mod res;
+
+mod ints;
+
+pub(crate) mod power;
 
 
-pub use self::res::SystemResource;
-pub use self::res::Resource;
+//pub use self::clocks::ClockSystem;
+pub use self::ints::InterruptSystem;
+pub use self::power::PowerSystem;
 
 
-pub(crate) use self::res::RESOURCES;
+
+/// Resources of the RP2040.
+#[link_section = ".systembss.RESOURCES"]
+pub(crate) static mut RESOURCES : [u32; 8] = [0u32; 8];
+
+
+
+pub trait SystemResource: Sized {
+    /// Function to acquire the resource.
+    fn acquire() -> Result<Self, crate::error::SystemError>;
+}
 
 
 

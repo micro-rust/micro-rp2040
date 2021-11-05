@@ -17,8 +17,6 @@ fn Reset0() -> ! {
     // Initialize the clocks.
     initialize();
 
-    micro::asm::bkpt::<2>();
-
     // Jump to user code.
     jump()
 }
@@ -89,13 +87,13 @@ unsafe fn sections() {
 /// Initialize the RP2040.
 fn initialize() {
     // Initialization routine of the Reset peripheral.
-    crate::power::RESET.init();
+    crate::sys::power::RESET.init();
 
     // Initialization routine of the Clocks peripheral.
     unsafe { crate::time::CLOCKS.init(); }
 
     // Initialize interrupts.
-    crate::ints::InterruptSystem::init();
+    crate::sys::ints::InterruptSystem::init();
 }
 
 

@@ -2,5 +2,3 @@
 
 #![deny(warnings)]
 
-
-pub mod uart;

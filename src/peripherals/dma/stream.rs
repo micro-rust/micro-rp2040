@@ -8,7 +8,7 @@ use crate::raw::AtomicRegister;
 use micro::Register;
 use micro::drivers::Data;
 
-use super::{ DMAChannelTrait, DMAHandle, buffer::{ SourceBuffer, RAMBuffer } };
+use super::{ DMAChannelTrait, DMAHandle, buffer::* };
 
 
 
@@ -21,11 +21,12 @@ pub struct Stream<'a, DMA: DMAChannelTrait> {
 
 impl<'a, DMA: DMAChannelTrait> Stream<'a, DMA> {
     /// Creates a stream to copy a RAM data buffer into another.
-    pub fn copy<D: Data, SRC: SourceBuffer<'a, D>>(dma: &'a mut DMA, source: SRC, target: RAMBuffer<'a, D>, options: Option<(bool, bool)>) -> Result<Self, SystemError> {
+    #[inline(never)]
+    pub fn copy<D: Data, SRC: SourceBuffer<'a, D>, DEST: DestinationBuffer<'a, D>>(dma: &'a mut DMA, source: SRC, target: DEST, options: Option<(bool, bool)>) -> Result<Self, SystemError> {
         const CFG: u32 = (0x3F << 15) | (1 << 5) | (1 << 4) | 1;
 
         // Get sizes.
-        let size = (source.size(), target.size());
+        let size = (source.size() as u32, target.size() as u32);
 
         // Size safety checks.
         #[cfg(not(feature = "skip-size-safety-checks"))]
@@ -37,9 +38,25 @@ impl<'a, DMA: DMAChannelTrait> Stream<'a, DMA> {
         let addr = (source.addr(), target.addr());
 
         // Configure the DMA.
-        configure(dma.raw(), CFG, addr, size, options);
+        configure(dma.raw(), CFG, addr, size, options)?;
 
-        Self { dma, }
+        // Enable the core's DMA IRQ.
+        match crate::sys::coreid() {
+            0 => {
+                dma.irq0enable();
+                dma.irq1disable();
+            },
+
+            _ => {
+                dma.irq1enable();
+                dma.irq0disable();
+            },
+        }
+
+        // Mark the handle as used.
+        dma.handle().reset();
+
+        Ok( Self { dma, } )
     }
 
     /// Aborts the DMA Stream, if it is still ongoing and has not errored.
@@ -58,6 +75,7 @@ impl<'a, DMA: DMAChannelTrait> Stream<'a, DMA> {
     #[inline]
     pub fn launch(&mut self) -> &'a mut DMAHandle {
         self.dma.launch();
+        self.dma.handle().launch();
         self.dma.handle()
     }
 
@@ -87,11 +105,12 @@ impl<'a, DMA: DMAChannelTrait> Stream<'a, DMA> {
 }
 
 
+
 #[inline(never)]
-fn configure(dma: &mut [AtomicRegister<u32>; 16], cfg: u32, addr: (u32, u32), size: (u32, u32), options: Option<(bool, bool)>) {
+fn configure(dma: &mut [AtomicRegister<u32>; 16], cfg: u32, addr: (u32, u32), size: (u32, u32), options: Option<(bool, bool)>) -> Result<(), SystemError> {
     // Address overlap safety checks.
     #[cfg(not(feature = "skip-address-safety-checks"))]
-    overlap(addr, size);
+    overlap(addr, size)?;
 
     // Configure the source address.
     dma[0].write(addr.0);
@@ -115,7 +134,9 @@ fn configure(dma: &mut [AtomicRegister<u32>; 16], cfg: u32, addr: (u32, u32), si
     };
 
     // Configure the control register.
-    dma[5].write(cfg);
+    dma[4].write(cfg);
+
+    Ok(())
 }
 
 

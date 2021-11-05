@@ -2,9 +2,9 @@
 //! Simply specifies the Register type to allow for Atomic Hardware accesses.
 
 
-use crate::error::{ Error, SystemError };
+use crate::error::SystemError;
 use crate::raw::SIORegister;
-use crate::sys::{ RESOURCES, SystemResource };
+use crate::sys::SystemResource;
 
 
 use micro::scb;
@@ -14,21 +14,20 @@ pub type Systick = scb::Systick<SIORegister<u32>>;
 
 
 impl SystemResource for Systick {
-    const LOCKNUM : usize = 7;
-    const LOCKOFF : u8 = 0;
+    fn acquire() -> Result<Self, SystemError> {
+        use crate::sys::RESOURCES;
 
-    fn acquire() -> Result<Self, Error> {
         // Get the offset depending on the Core calling.
-        let offset = Self::LOCKOFF + crate::sys::coreid() as u8;
+        let offset = 16 + match crate::sys::coreid() { 0 => 0, _ => 1, };
 
-        match unsafe { RESOURCES[Self::LOCKNUM] & (1 << offset) } {
+        match unsafe { RESOURCES[0] & (1 << offset) } {
             0 => {
-                unsafe { RESOURCES[Self::LOCKNUM] |= 1 << offset; }
+                unsafe { RESOURCES[0] |= 1 << offset; }
 
                 Ok( Self::empty() )
             },
 
-            _ => Err( Error::System( SystemError::PeripheralNotAvailable ) ),
+            _ => Err( SystemError::PeripheralNotAvailable ),
         }
     }
 }

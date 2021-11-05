@@ -91,7 +91,10 @@ impl DMAHandle {
     /// Blocks until the Stream has either aborted, completed or errored.
     #[inline(always)]
     pub fn join(&self) {
-        while (self.0 & (Self::ABORT | Self::DONE | Self::ERROR)) == 0 { nop() }
+        use core::ptr::read_volatile as read;
+
+        // Perform a volatile read to force update.
+        while (unsafe { read(self as *const Self as *const u32) } & (Self::ABORT | Self::DONE | Self::ERROR)) == 0 { nop() }
     }
 
     /// Sets the aborted flag, clears the BUSY flag.
@@ -136,21 +139,22 @@ impl DMAHandle {
         self.0 = Self::USED
     }
 
-    /// Sets the launch flag, clears the STOP flag.
+    /// Sets the LAUNCH flag, clears the STOP flag.
     #[inline(always)]
     pub(crate) fn launch(&mut self) {
         self.0 |= Self::BUSY
     }
 
     /// Parses a control register to update the info after an IRQ.
+    #[inline(always)]
     pub fn update(&mut self, ctrl: u32) {
         // Set the error flags.
         self.0 |= (ctrl >> 13) & 0x7000;
 
         // Check for the completion flag.
         match (ctrl >> 24) & 1 {
-            1 => self.0 = (self.0 & !Self::BUSY) | Self::DONE,
-            0 => (),
+            0 => self.0 = (self.0 & !Self::BUSY) | Self::DONE,
+            1 => (),
 
             _ => unreachable!(),
         }
@@ -161,7 +165,7 @@ impl DMAHandle {
 impl Future for DMAHandle {
     type Output = ();
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Self::Output> {
         if self.finished() {
             Poll::Ready(())
         } else {

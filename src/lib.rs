@@ -17,23 +17,13 @@
 
 mod alloc;
 
-/// Communication peripherals.
-pub mod comm;
 
-/// DMA Peripheral.
-pub mod dma;
 
 /// Error module.
 pub mod error;
 
-/// Interrupt module.
-pub mod ints;
-
-/// GP I/O Pins module.
-pub mod pins;
-
-/// Power and Reset peripherals.
-pub mod power;
+/// Peripehrals module.
+pub mod peripherals;
 
 /// Prelude module.
 pub mod prelude;

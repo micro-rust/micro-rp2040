@@ -40,20 +40,38 @@ impl InterruptSystem {
         table.set::<11>(handlers::dma0);
         table.set::<12>(handlers::dma1);
 
+        // Enable the necessary interrupts.
+        Self::enableirq::<11>();
+        Self::enableirq::<12>();
+
         // Relocate VTOR.
         Self::relocate(new);
     }
 
     /// Enables the given IRQ.
     #[inline(always)]
-    pub fn enableirq(irq: u8) {
+    pub fn enableirq<const IRQ: u8>() {
+        let ISER: &mut SIORegister<u32> = unsafe { &mut *(0xE000E100 as *mut _) };
+        ISER.write( 1 << IRQ )
+    }
+
+    /// Disables the given IRQ.
+    #[inline(always)]
+    pub fn disableirq<const IRQ: u8>() {
+        let ICER: &mut SIORegister<u32> = unsafe { &mut *(0xE000E180 as *mut _) };
+        ICER.write( 1 << IRQ )
+    }
+
+    /// Enables the given IRQ.
+    #[inline(always)]
+    pub fn enableirqn(irq: u8) {
         let ISER: &mut SIORegister<u32> = unsafe { &mut *(0xE000E100 as *mut _) };
         ISER.write( 1 << irq )
     }
 
     /// Disables the given IRQ.
     #[inline(always)]
-    pub fn disableirq(irq: u8) {
+    pub fn disableirqn(irq: u8) {
         let ICER: &mut SIORegister<u32> = unsafe { &mut *(0xE000E180 as *mut _) };
         ICER.write( 1 << irq )
     }
@@ -167,7 +185,7 @@ impl InterruptSystem {
         IPR[R].write( (IPR[R].read() & !(0x3 << O)) | ((prio as u32) << O) );
 
         // Enable the IRQ.
-        Self::enableirq(IRQ as u8);
+        Self::enableirqn(IRQ as u8);
 
         // Set the function.
         match crate::sys::coreid() {

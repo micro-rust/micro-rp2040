@@ -33,20 +33,32 @@ pub use self::stream::Stream;
 pub trait DMAChannelTrait: Sized {
 
     /// Returns the raw DMA Channel block.
-    fn raw(&self) -> &'static mut [AtomicRegister<u32>; 16];
+    fn raw(&mut self) -> &'static mut [AtomicRegister<u32>; 16];
     
     /// Returns a reference to the asynchronous DMA Handle.
-    fn handle<'a>(&self) -> &'a mut DMAHandle;
+    fn handle<'a>(&mut self) -> &'a mut DMAHandle;
 
     /// Launches the DMA Channel.
-    fn launch(&self);
+    fn launch(&mut self);
 
     /// Aborts the DMA Channel.
-    fn abort(&self);
+    fn abort(&mut self);
 
     /// Stops the DMA Channel.
-    fn stop(&self);
+    fn stop(&mut self);
 
     /// Resumes a stopped DMA Channel.
-    fn resume(&self);
+    fn resume(&mut self);
+
+    /// Enables the DMA IRQ 0 for this channel.
+    fn irq0enable(&mut self);
+
+    /// Enables the DMA IRQ 1 for this channel.
+    fn irq1enable(&mut self);
+
+    /// Disables the DMA IRQ 0 for this channel.
+    fn irq0disable(&mut self);
+
+    /// Disables the DMA IRQ 1 for this channel.
+    fn irq1disable(&mut self);
 }

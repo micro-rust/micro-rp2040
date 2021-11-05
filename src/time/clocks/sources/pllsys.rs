@@ -2,7 +2,7 @@
 
 
 use crate::features::__XFREQ__;
-use crate::power::{ RESET, ResetId };
+use crate::sys::power::{ RESET, ResetId };
 use crate::raw::AtomicRegister;
 use crate::sync::Syslock;
 use crate::time::CLOCKS;
