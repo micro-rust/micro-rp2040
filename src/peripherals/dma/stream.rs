@@ -38,7 +38,7 @@ impl<'a, DMA: DMAChannelTrait> Stream<'a, DMA> {
         let addr = (source.addr(), target.addr());
 
         // Configure the DMA.
-        configure(dma.raw(), CFG, addr, size, options)?;
+        configure(dma.raw(), CFG | ((D::SIZE as u32 >> 1) << 2), addr, size, options)?;
 
         // Enable the core's DMA IRQ.
         match crate::sys::coreid() {
