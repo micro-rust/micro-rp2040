@@ -69,8 +69,6 @@ impl<const N: usize> Uart<N> {
             fbrd = ((div & 0x7F) + 1) / 2;
         }
 
-        micro::asm::bkpt::<128>();
-
         // Load IBRD and FBRD.
         uart[ 9].write(ibrd);
         uart[10].write(fbrd);

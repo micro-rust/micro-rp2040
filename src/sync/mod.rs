@@ -4,9 +4,12 @@
 #![deny(warnings)]
 
 
+mod fifo;
 mod spinlock;
 mod syslock;
 
+
+pub use self::fifo::Mailbox;
 
 pub use self::syslock::Syslock;
 

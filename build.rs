@@ -33,6 +33,9 @@ fn main() {
 		rustify(&bin, &rust);
 	}
 
+	// Compile the assembly trampoline.
+	trampoline();
+
 	// Place the linker in the output directory.
 	linker();
 
@@ -183,10 +186,18 @@ fn linker() {
 }
 
 
+fn trampoline() {
+	cc::Build::new().file("src/asm.S").compile("asm");
+}
+
+
 fn rerun() {
 	// Build script changes.
 	println!("cargo:rerun-if-changed=build.rs");
 
 	// Linker changes.
 	println!("cargo:rerun-if-changed=memory.ld");
+
+	// Assembly changes.
+	println!("cargo:rerun-if-changed=src/asm.S");
 }

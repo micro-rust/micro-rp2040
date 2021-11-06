@@ -38,6 +38,7 @@ pub static mut CLOCKS : Clocks = Clocks::empty();
 pub static mut TESTCLOCKS : [u32; 16] = [0u32; 16];
 
 
+
 pub trait SystemResource: Sized {
     /// Function to acquire the resource.
     fn acquire() -> Result<Self, crate::error::SystemError>;

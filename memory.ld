@@ -4,6 +4,10 @@
 EXTERN(Reset0);
 ENTRY(Reset0);
 
+/* Provide dummy symbols for main functions */
+PROVIDE(__MAINFN0 = 0x00000000);
+PROVIDE(__MAINFN1 = 0x00000000);
+
 /* Compile time configuration of IRQs. */
 EXTERN(DefaultHandlerFn);
 
@@ -145,7 +149,7 @@ SECTIONS {
 		__svt1 = .;
 
 		LONG( ORIGIN(SRAM4) + 2048 );
-		LONG(0x00000000);
+		KEEP(*(.vectortable.Reset1));
 		KEEP(*(.vectortable.int1));
 
 		__evt1 = .;

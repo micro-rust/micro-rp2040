@@ -4,8 +4,8 @@
 #![deny(warnings)]
 
 
-mod core0;
-mod core1;
+pub(super) mod core0;
+pub(super) mod core1;
 
 
 
