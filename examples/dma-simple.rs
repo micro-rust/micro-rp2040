@@ -46,15 +46,15 @@ fn usermain() -> ! {
 
     // You can do stuff here.
     // The stream will execute on its own.
-	// I, for example, am calculating what's 2 + 2, cause my calculator broke.
-	let x = 2;
-	let y = 2;
+    // I, for example, am calculating what's 2 + 2, cause my calculator broke.
+    let x = 2;
+    let y = 2;
 
-	let z = x + y;
+    let z = x + y;
 
-	// Now that we have done our things, wait until the stream completes.
+    // Now that we have done our things, wait until the stream completes.
     // Doing some tests, the DELTA for same bank transfers takes ~17 microseconds.
-	handle.join();
+    handle.join();
 
-	loop { nop() }
+    loop { nop() }
 }

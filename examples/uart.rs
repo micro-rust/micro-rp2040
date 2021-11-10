@@ -39,17 +39,17 @@ fn usermain() -> ! {
     let mut logger = uart();
 
     // Prepare hello message.
-    let hello: [u8; 48] = [
+    let hello: [u8; 52] = [
         b'H', b'e', b'l', b'l', b'o', b' ', b'w', b'o', b'r', b'l', b'd', b'!', b'\n',
         b'H', b'e', b'l', b'l', b'o', b' ', b'w', b'o', b'r', b'l', b'd', b'!', b'\n',
         b'H', b'e', b'l', b'l', b'o', b' ', b'w', b'o', b'r', b'l', b'd', b'!', b'\n',
         b'H', b'e', b'l', b'l', b'o', b' ', b'w', b'o', b'r', b'l', b'd', b'!', b'\n',
     ];
 
-    let buffer = match CopyFromRam::create(&hello).unwrap();
+    let buffer = CopyFromRam::create(&hello).unwrap();
 
     // Send asynchronously the hello message.
-    let handle = match logger.send( buffer, false ).unwrap();
+    let handle = logger.send( buffer, false ).unwrap();
 
     // You can do stuff here.
     // The stream will execute on its own.
