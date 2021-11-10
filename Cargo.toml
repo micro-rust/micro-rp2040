@@ -25,6 +25,8 @@ debug = true
 path = "../micro"
 features = ["arm"]
 
+[dependencies.embedded-hal]
+version = "1.0.0-alpha.5"
 
 [build-dependencies]
 crc-any = "2.3"

@@ -1,6 +1,10 @@
 //! UART Pin abstractions.
 
 
+use crate::raw::AtomicRegister;
+
+use micro::Register;
+
 use super::*;
 
 
@@ -72,7 +76,7 @@ pub trait UartTxPin<const N: usize>: UartPin<N> {
 
         // Configure the pad.
         // Enable output, disable input, drive to 4 mA, Pull Up, no Schmitt, Slew fast.
-        pad.write(0);
+        pad.write(1 << 3);
     }
 }
 

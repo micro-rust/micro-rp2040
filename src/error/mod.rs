@@ -5,12 +5,14 @@
 mod comm;
 mod cortex;
 mod dma;
+mod i2c;
 mod system;
 
 
 
 pub use self::comm::*;
 pub use self::cortex::CortexError;
+pub use self::i2c::*;
 pub use self::dma::*;
 pub use self::system::SystemError;
 
@@ -20,6 +22,9 @@ pub use self::system::SystemError;
 pub enum Error {
     /// A communication error ocurred.
     Comm(CommError),
+
+    /// An I2C error ocurred.
+    I2C(I2CError),
 
     /// A Cortex M0+ architecture error ocurred.
     Cortex(CortexError),

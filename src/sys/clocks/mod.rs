@@ -51,6 +51,12 @@ impl Clocks {
         // Configure all outputs.
         self.outputs.init();
     }
+
+    /// Returns the frequency of the system clock.
+    #[inline(always)]
+    pub fn sysfreq() -> u32 {
+        unsafe { crate::sys::CLOCKS.freqs[Clock::System.index()] }
+    }
 }
 
 

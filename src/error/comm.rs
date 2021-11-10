@@ -11,9 +11,6 @@ pub enum CommError {
     /// SPI Error.
     Spi(SPIError),
 
-    /// I2C Error.
-    Iic(I2CError),
-
     /// USB Error.
     Usb(USBError),
 
@@ -43,14 +40,6 @@ pub enum UartError {
     /// A DMA error ocurred.
     Dma,
 
-    /// Unknown / Other error.
-    Other,
-}
-
-
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum I2CError {
     /// Unknown / Other error.
     Other,
 }

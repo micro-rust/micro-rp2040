@@ -6,17 +6,16 @@
 #![allow(non_camel_case_types)]
 
 
-
-pub mod led;
+pub mod i2c;
 pub mod uart;
 
 
-use crate::error::SystemError;
-use crate::raw::AtomicRegister;
-use crate::sync::Syslock;
-use crate::sys::SystemResource;
+pub mod led;
 
-use micro::Register;
+
+use crate::{
+    error::SystemError, sync::Syslock, sys::SystemResource,
+};
 
 
 pub use self::pinout::*;
@@ -39,12 +38,15 @@ impl<const N: usize> Gpio<N> {
 impl<const N: usize> SystemResource for Gpio<N> {
     fn acquire() -> Result<Self, SystemError> {
         extern "C" {
-            static PINLOCK : u32;
+            static mut PINLOCK : u32;
         }
 
         match Syslock::acquire() {
             Some(_) => match (unsafe { PINLOCK } >> N) & 1 {
-                0 => Ok(Self),
+                0 => {
+                    unsafe { PINLOCK |= 1 << N; }
+                    Ok(Self)
+                },
                 _ => Err( SystemError::PeripheralNotAvailable ),
             },
 
