@@ -4,6 +4,7 @@
 use crate::{
     error::{ Error, I2CError }, peripherals::pins::i2c::*,
     raw::AtomicRegister, sync::Spinlock, sys::clocks::Clocks,
+    math::UInt32,
 };
 
 use embedded_hal::i2c::{
@@ -35,6 +36,7 @@ impl<const N: usize, SDA: I2CSdaPin<N>, SCL: I2CSclPin<N>> I2CMaster<N, SDA, SCL
     const ADDRESS: usize = 0x40044000 + (0x4000 * N);
 
     /// Creates an I2C Master from the given I2C instance.
+    #[inline(never)]
     pub fn create(instance: I2CInstance<N>, cfg: I2CConfig, sda: SDA, scl: SCL) -> Self {
         use core::mem::forget;
 
@@ -63,11 +65,11 @@ impl<const N: usize, SDA: I2CSdaPin<N>, SCL: I2CSclPin<N>> I2CMaster<N, SDA, SCL
         i2c[15].write(0);
 
         // Get system frequency.
-        let sysfreq = Clocks::sysfreq();
+        let sysfreq = UInt32::new( Clocks::sysfreq() );
 
         // Get period.
-        let period = (sysfreq + cfg.baud / 2) / cfg.baud;
-        let hcnt = (period * 2) / 5;
+        let period = (sysfreq + UInt32::new(cfg.baud) / 2u32) / cfg.baud;
+        let hcnt = (period * 2u32) / 5u32;
         let lcnt = period - hcnt;
 
         assert!(hcnt <= 0xffff);
@@ -77,21 +79,21 @@ impl<const N: usize, SDA: I2CSdaPin<N>, SCL: I2CSclPin<N>> I2CMaster<N, SDA, SCL
 
         // Calculate TX hold count.
         let txhold = if cfg.baud < 1000000 {
-            ((sysfreq * 3) / 10000000) + 1
+            ((sysfreq * 3u32) / 10000000u32) + 1u32
         } else {
-            ((sysfreq * 3) / 25000000) + 1
+            ((sysfreq * 3u32) / 25000000u32) + 1u32
         };
 
-        assert!(txhold <= lcnt - 2);
+        assert!(txhold <= lcnt - 2u32);
 
         // Write the latency and clock registers.
-        i2c[7].write(hcnt);
-        i2c[8].write(lcnt);
-        i2c[31].write(txhold);
+        i2c[ 7].write( u32::from( hcnt ) );
+        i2c[ 8].write( u32::from( lcnt ) );
+        i2c[31].write( u32::from( txhold ) );
 
         // Calculate spike suppression length.
-        let spklen = if lcnt < 16 { 1 } else { lcnt / 16 };
-        i2c[40].write(spklen);
+        let spklen = if lcnt < 16 { UInt32::new(1) } else { lcnt / 16u32 };
+        i2c[40].write( u32::from(spklen) );
 
         // Enable the I2C block.
         i2c[27].write(1);

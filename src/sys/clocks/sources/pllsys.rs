@@ -2,6 +2,7 @@
 
 
 use crate::features::__XFREQ__;
+use crate::math::UInt32;
 use crate::sys::power::{ RESET, ResetId };
 use crate::raw::AtomicRegister;
 use crate::sync::Syslock;
@@ -70,7 +71,8 @@ impl PllSystem {
         PLL[1].clear(1 << 3);
 
         // Set the frequency.
-        unsafe { CLOCKS.freqs[Clock::PllSys.index()] = ( __XFREQ__ * (PLL[2].read() & 0xFFF) ) / 12; }
+        let freq = UInt32::new( __XFREQ__ * (PLL[2].read() & 0xFFF) ) / 12u32;
+        unsafe { CLOCKS.freqs[Clock::PllSys.index()] = u32::from(freq); }
     }
 
 

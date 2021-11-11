@@ -157,77 +157,77 @@ impl SFloatTable {
 impl SFloatTable {
     #[inline(always)]
     pub(super) fn cmp(&self, a: f32, b: f32) -> i32 {
-        let f: extern "C" fn(f32, f32) -> i32 = unsafe { core::mem::transmute( self.0[21] ) };
+        let f: extern "C" fn(f32, f32) -> i32 = unsafe { transmute( read((&self.0[21]) as *const u32) ) };
 
         f(a, b)
     }
 
     #[inline(always)]
     pub(super) fn atan2(&self, a: f32, b: f32) -> f32 {
-        let f: extern "C" fn(f32, f32) -> f32 = unsafe { core::mem::transmute( self.0[22] ) };
+        let f: extern "C" fn(f32, f32) -> f32 = unsafe { transmute( read((&self.0[22]) as *const u32) ) };
 
         f(a, b)
     }
 
     #[inline(always)]
     pub(super) fn int642float(&self, a: i64) -> f32 {
-        let f: extern "C" fn(i64) -> f32 = unsafe { core::mem::transmute( self.0[23] ) };
+        let f: extern "C" fn(i64) -> f32 = unsafe { transmute( read((&self.0[23]) as *const u32) ) };
 
         f(a, b)
     }
 
     #[inline(always)]
     pub(super) fn fix642float(&self, a: i64, b: i32) -> f32 {
-        let f: extern "C" fn(i64, i32) -> f32 = unsafe { core::mem::transmute( self.0[24] ) };
+        let f: extern "C" fn(i64, i32) -> f32 = unsafe { transmute( read((&self.0[24]) as *const u32) ) };
 
         f(a, b)
     }
 
     #[inline(always)]
     pub(super) fn uint642float(&self, a: u64) -> f32 {
-        let f: extern "C" fn(u64) -> f32 = unsafe { core::mem::transmute( self.0[25] ) };
+        let f: extern "C" fn(u64) -> f32 = unsafe { transmute( read((&self.0[25]) as *const u32) ) };
 
         f(a, b)
     }
 
     #[inline(always)]
     pub(super) fn ufix642float(&self, a: u64, b: i32) -> f32 {
-        let f: extern "C" fn(u64, i32) -> f32 = unsafe { core::mem::transmute( self.0[26] ) };
+        let f: extern "C" fn(u64, i32) -> f32 = unsafe { transmute( read((&self.0[26]) as *const u32) ) };
 
         f(a, b)
     }
 
     #[inline(always)]
     pub(super) fn float2int64(&self, a: f32) -> i64 {
-        let f: extern "C" fn(f32) -> i64 = unsafe { core::mem::transmute( self.0[27] ) };
+        let f: extern "C" fn(f32) -> i64 = unsafe { transmute( read((&self.0[27]) as *const u32) ) };
 
         f(a)
     }
 
     #[inline(always)]
     pub(super) fn float2fix64(&self, a: f32, b: i32) -> i64 {
-        let f: extern "C" fn(f32, i32) -> i64 = unsafe { core::mem::transmute( self.0[28] ) };
+        let f: extern "C" fn(f32, i32) -> i64 = unsafe { transmute( read((&self.0[28]) as *const u32) ) };
 
         f(a, b)
     }
 
     #[inline(always)]
     pub(super) fn float2uint64(&self, a: f32) -> u64 {
-        let f: extern "C" fn(f32) -> u64 = unsafe { core::mem::transmute( self.0[29] ) };
+        let f: extern "C" fn(f32) -> u64 = unsafe { transmute( read((&self.0[29]) as *const u32) ) };
 
         f(a)
     }
 
     #[inline(always)]
     pub(super) fn float2ufix64(&self, a: f32, b: i32) -> u64 {
-        let f: extern "C" fn(f32, i32) -> u64 = unsafe { core::mem::transmute( self.0[30] ) };
+        let f: extern "C" fn(f32, i32) -> u64 = unsafe { transmute( read((&self.0[30]) as *const u32) ) };
 
         f(a, b)
     }
 
     #[inline(always)]
     pub(super) fn float2double(&self, a: f32) -> f64 {
-        let f: extern "C" fn(f32) -> f64 = unsafe { core::mem::transmute( self.0[31] ) };
+        let f: extern "C" fn(f32) -> f64 = unsafe { transmute( read((&self.0[31]) as *const u32) ) };
 
         f(a)
     }

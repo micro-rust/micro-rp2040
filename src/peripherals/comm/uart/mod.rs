@@ -2,6 +2,7 @@
 
 
 use crate::error::SystemError;
+use crate::math::UInt32;
 use crate::peripherals::pins::uart::*;
 use crate::raw::AtomicRegister;
 use crate::sys::{ SystemResource, RESOURCES, CLOCKS, clocks::Clock };
@@ -51,27 +52,27 @@ impl<const N: usize> Uart<N> {
         let uart = unsafe { &mut *((0x40034000 + { 0x4000 * N }) as *mut [AtomicRegister<u32>; 19]) };
 
         // Get peripheral clock.
-        let freq = unsafe { CLOCKS.freqs[Clock::Peripheral.index()] };
+        let freq = UInt32::new( unsafe { CLOCKS.freqs[Clock::Peripheral.index()] } );
 
         // Set the baudrate.
-        let div = (8 * freq) / baud;
+        let div = (UInt32::new(8) * freq) / baud;
 
-        let mut ibrd = div >> 7;
+        let mut ibrd = div >> 7u32;
         let fbrd;
 
         if ibrd == 0 {
-            ibrd = 1;
-            fbrd = 0;
+            ibrd = UInt32::new( 1 );
+            fbrd = UInt32::new( 0 );
         } else if ibrd >= 65535 {
-            ibrd = 65535;
-            fbrd = 0;
+            ibrd = UInt32::new( 65535 );
+            fbrd = UInt32::new( 0 );
         } else {
-            fbrd = ((div & 0x7F) + 1) / 2;
+            fbrd = ((div & 0x7Fu32) + 1u32) / 2u32;
         }
 
         // Load IBRD and FBRD.
-        uart[ 9].write(ibrd);
-        uart[10].write(fbrd);
+        uart[ 9].write( u32::from( ibrd) );
+        uart[10].write( u32::from( fbrd) );
 
         // Dummy LCR H write.
         uart[11].write(0);
@@ -80,14 +81,14 @@ impl<const N: usize> Uart<N> {
         uart[11].write(u32::from(cfg));
 
         // Get final baudrate.
-        let baudrate = (4 * freq) / ((64 * ibrd) + fbrd);
+        let baudrate = (UInt32::new(4) * freq) / ((UInt32::new(64) * ibrd) + fbrd);
 
         uart[12].set(1);
 
         // Enable DMA requests.
         uart[18].set(1 << 1);
 
-        baudrate
+        u32::from( baudrate )
     }
 
     /// Splits the given UART into a RX and TX channel.
