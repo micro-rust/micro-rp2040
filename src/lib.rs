@@ -22,6 +22,9 @@
 /// Error module.
 pub mod error;
 
+/// HW and SW math abstractions.
+pub mod math;
+
 /// Peripehrals module.
 pub mod peripherals;
 
@@ -40,6 +43,7 @@ pub mod time;
 
 /// Raw access module.
 pub(crate) mod raw;
+
 
 
 

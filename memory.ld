@@ -132,7 +132,7 @@ SECTIONS {
 
 
 	/* ******************************************************************** */
-	.vectortable ORIGIN(FLASHCU) + 0x100 : 
+	.vector_table ORIGIN(FLASHCU) + 0x100 : 
 	{
 		/* Core 0 vector table. */
 		__svt0 = .;

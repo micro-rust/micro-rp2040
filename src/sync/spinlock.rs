@@ -35,6 +35,12 @@ impl<const N: usize> Spinlock<N> {
     pub fn release(&self) {
         unsafe { LOCK[N].write(1); }
     }
+
+    /// Force releases the lock.
+    #[inline(always)]
+    pub unsafe fn force_release() {
+        LOCK[N].write(1)
+    }
 }
 
 impl<const N: usize> Drop for Spinlock<N> {

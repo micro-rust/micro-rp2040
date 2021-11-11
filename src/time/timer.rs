@@ -3,6 +3,7 @@
 use crate::raw::AtomicRegister;
 
 use micro::Register;
+use micro::asm::*;
 
 
 /// Microsecond timer with microseconds resolution.
@@ -14,9 +15,16 @@ impl USTimer {
     /// Returns `(high, low)`.
     /// This function is always safe.
     #[inline(always)]
-    pub fn read() -> (u32, u32) {
+    pub fn read() -> u64 {
         let TIMER = unsafe { &mut *(0x40054000 as *mut [AtomicRegister<u32>; 4]) };
 
-        ( TIMER[3].read(), TIMER[2].read() )
+        cpsid_i();
+
+        let lo = TIMER[3].read();
+        let hi = TIMER[2].read();
+
+        cpsie_i();
+
+        ((hi as u64) << 32) | (lo as u64)
     }
 }

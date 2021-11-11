@@ -42,3 +42,48 @@ pub trait Buffer: Sized {
     /// Returns the size of the buffer.
     fn size(&self) -> usize;
 }
+
+
+impl<'a, D: Data> SourceBuffer<'a, D> for &'a [D] {
+    fn create(buf: &'a [D]) -> Result<Self, SystemError> {
+        Ok( buf )
+    }
+}
+
+impl<'a, D: Data> DestinationBuffer<'a, D> for &'a mut [D] {
+    fn create(buf: &'a mut [D]) -> Result<Self, SystemError> {
+        Ok( buf )
+    }
+}
+
+impl<'a, D: Data> ConsumeBuffer for &'a [D] {}
+
+impl<'a, D: Data> FeedBuffer for &'a mut [D] {}
+
+impl<'a, D: Data> Buffer for &'a [D] {
+    unsafe fn raw(addr: u32, size: usize) -> Self {
+        core::slice::from_raw_parts(addr as *const _, size)
+    }
+
+    fn addr(&self) -> u32 {
+        self.as_ptr() as u32
+    }
+
+    fn size(&self) -> usize {
+        self.len()
+    }
+}
+
+impl<'a, D: Data> Buffer for &'a mut [D] {
+    unsafe fn raw(addr: u32, size: usize) -> Self {
+        core::slice::from_raw_parts_mut(addr as *mut _, size)
+    }
+
+    fn addr(&self) -> u32 {
+        self.as_ptr() as u32
+    }
+
+    fn size(&self) -> usize {
+        self.len()
+    }
+}

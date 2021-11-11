@@ -85,7 +85,7 @@ skip-size-safety-checks = []
 
 skip-safety-checks = ["skip-address-safety-checks", "skip-size-safety-checks"]
 
-
+bootrom-V2 = []
 
 
 # Board features.
