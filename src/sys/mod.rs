@@ -17,31 +17,20 @@ pub mod clocks;
 pub(crate) mod power;
 
 
+pub(crate) mod resources;
+
+
 //pub use self::clocks::ClockSystem;
 pub use self::clocks::Clocks;
 pub use self::ints::InterruptSystem;
 pub use self::power::PowerSystem;
 
 
-/// Resources of the RP2040.
-#[link_section = ".systembss.RESOURCES"]
-pub(crate) static mut RESOURCES : [u32; 8] = [0u32; 8];
-
-
-#[link_section = ".systembss.CLOCKS"]
+#[link_section = ".systembss0.CLOCKS"]
 #[used]
-pub static mut CLOCKS : Clocks = Clocks::empty();
+pub static mut CLOCKS : [u32; 16] = [0u32; 16];
 
 
-#[link_section = ".systembss.TESTCLOCKS"]
-#[used]
-pub static mut TESTCLOCKS : [u32; 16] = [0u32; 16];
-
-
-pub trait SystemResource: Sized {
-    /// Function to acquire the resource.
-    fn acquire() -> Result<Self, crate::error::SystemError>;
-}
 
 
 

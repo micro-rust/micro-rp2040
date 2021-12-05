@@ -2,18 +2,21 @@
 //! Contains all errors possible in the RP2040.
 
 
+mod adc;
 mod comm;
 mod cortex;
 mod dma;
 mod i2c;
+mod spi;
 mod system;
 
 
-
+pub use self::adc::*;
 pub use self::comm::*;
 pub use self::cortex::CortexError;
 pub use self::i2c::*;
 pub use self::dma::*;
+pub use self::spi::*;
 pub use self::system::SystemError;
 
 

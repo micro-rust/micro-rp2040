@@ -14,7 +14,7 @@ mod stream;
 
 
 
-#[link_section = ".systemdata.DMAHANDLES"]
+#[link_section = ".systemdata0.DMAHANDLES"]
 pub(crate) static mut DMAHANDLES : [DMAHandle; 12] = [
     DMAHandle::new(), DMAHandle::new(), DMAHandle::new(), DMAHandle::new(),
     DMAHandle::new(), DMAHandle::new(), DMAHandle::new(), DMAHandle::new(),

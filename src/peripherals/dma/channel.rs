@@ -1,15 +1,9 @@
 //! Container for an optimized DMA Channel.
 
 
-use crate::error::SystemError;
-use crate::raw::AtomicRegister;
-use crate::sync::Syslock;
-use crate::sys::{ SystemResource, RESOURCES };
+use crate::prelude::*;
 
-
-use micro::Register;
 use micro::asm::nop;
-
 
 use super::DMAChannelTrait;
 use super::DMAHandle;
@@ -30,7 +24,7 @@ impl<const N: usize> DMAChannelTrait for DMAChannel<N> {
     fn raw(&mut self) -> &'static mut [AtomicRegister<u32>; 16] {
         unsafe { &mut *(Self::ADDR as *mut _) }
     }
-    
+
     fn handle<'a>(&mut self) -> &'a mut DMAHandle {
         unsafe { &mut super::DMAHANDLES[N] }
     }
@@ -87,18 +81,20 @@ impl<const N: usize> DMAChannelTrait for DMAChannel<N> {
 impl<const N: usize> SystemResource for DMAChannel<N> {
     fn acquire() -> Result<Self, SystemError> {
         match Syslock::acquire() {
-            Some(_) => match unsafe { RESOURCES[1] } & (1 << N) {
-                0 => {
-                    unsafe { RESOURCES[1] |= 1 << N; }
-
-                    Ok( Self )
-                },
+            Ok(_) => match Resources::dma::<N>() {
+                Some(_) => Ok( Self ),
 
                 _ => Err( SystemError::PeripheralNotAvailable ),
             },
 
             _ => Err( SystemError::NoSystemLock ),
         }
+    }
+
+    fn release(&mut self) {
+        DropResources::dma::<N>();
+
+        core::mem::forget(self);
     }
 }
 
@@ -114,16 +110,6 @@ impl<const N: usize> Drop for DMAChannel<N> {
         dma[2].write(0);
         dma[3].write(0);
 
-        // Wait until syslock is available.
-        loop {
-            match Syslock::acquire() {
-                Some(_) => {
-                    unsafe { RESOURCES[1] &= !(1 << N) }
-
-                    return
-                },
-                _ => (),
-            }
-        }
+        DropResources::dma::<N>();
     }
 }

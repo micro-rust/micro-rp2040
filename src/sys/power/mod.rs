@@ -12,6 +12,6 @@ pub use self::power::*;
 pub use self::reset::*;
 
 
-#[link_section = ".systembss.RESET"]
+#[link_section = ".sysbss0.RESET"]
 #[used]
 pub static RESET : self::reset::ResetSystem = self::reset::ResetSystem::empty();

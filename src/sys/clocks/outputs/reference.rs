@@ -1,14 +1,13 @@
 //! Reference Clock wrapper.
 
 
+use crate::prelude::*;
+
 use crate::features::__XFREQ__;
-use crate::raw::AtomicRegister;
-use crate::sync::Syslock;
 use crate::sys::CLOCKS;
 use crate::sys::clocks::{ Clock, ClockInfo };
 
 use micro::Peripheral;
-use micro::Register;
 use micro::asm::nop;
 
 
@@ -51,7 +50,7 @@ impl Reference {
         let mut CLOCK: CLOCK = Peripheral::get();
 
         match Syslock::acquire() {
-            Some(_) => match self.0.refs {
+            Ok(_) => match self.0.refs {
                 0 => {
                     CLOCK[0].clear(0x3);
                     CLOCK[0].set(0x1);
@@ -76,7 +75,7 @@ impl Reference {
         let mut CLOCK: CLOCK = Peripheral::get();
 
         match Syslock::acquire() {
-            Some(_) => match self.0.refs {
+            Ok(_) => match self.0.refs {
                 0 => {
                     CLOCK[0].clear(0x3);
                     while CLOCK[2].read() == 0 { nop() }
@@ -100,7 +99,7 @@ impl Reference {
         let mut CLOCK: CLOCK = Peripheral::get();
 
         match Syslock::acquire() {
-            Some(_) => match self.0.refs {
+            Ok(_) => match self.0.refs {
                 0 => {
                     CLOCK[0].clear(0x3);
                     CLOCK[0].set(0x2);
@@ -126,7 +125,7 @@ impl Reference {
         let CLOCK: CLOCK = Peripheral::get();
 
         match Syslock::acquire() {
-            Some(_) => match self.0.refs {
+            Ok(_) => match self.0.refs {
 
                 // If it's not referenced, switch without fear.
                 0 => self.__secondary__(clock),
@@ -183,7 +182,7 @@ impl Reference {
     /// Freezes the clock.
     pub fn freeze(&mut self) -> Option<u32> {
         match Syslock::acquire() {
-            Some(_) => {
+            Ok(_) => {
                 self.0.__freeze__();
 
                 Some( unsafe { CLOCKS.freqs[Clock::Reference.index()] } )

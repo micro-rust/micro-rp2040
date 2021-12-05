@@ -20,8 +20,14 @@ impl<const N: usize> Spinlock<N> {
     /// Acquires the lock if it's available.
     #[inline(always)]
     pub fn acquire() -> Option<Self> {
-        if N >  31 { panic!("Spinlocks higher than 31 do not exist.") }
-        if N == 31 { panic!("Spinlock 31 is system reserved.") }
+        #[cfg(feature = "alloc")]
+        const MAX: usize = 29;
+
+        #[cfg(not(feature = "alloc"))]
+        const MAX: usize = 30;
+
+        if N >  MAX { panic!("Spinlocks higher than 31 do not exist.") }
+        if N == MAX { panic!("Spinlock 31 is system reserved.") }
 
 
         match unsafe { LOCK[N].read() } {
@@ -80,4 +86,9 @@ pub type Spinlock26 = Spinlock<26>;
 pub type Spinlock27 = Spinlock<27>;
 pub type Spinlock28 = Spinlock<28>;
 pub type Spinlock29 = Spinlock<29>;
+
+#[cfg(not(feature = "alloc"))]
 pub type Spinlock30 = Spinlock<30>;
+
+#[cfg(feature = "alloc")]
+pub(crate) type AllocatorLock = Spinlock<30>;

@@ -6,12 +6,12 @@ mod cfg;
 
 
 /// Tracks the I2C0 addresses which have an interface associated with it.
-#[link_section = ".systembss.I2C0ADDR"]
+#[link_section = ".sysbss0.I2C0ADDR"]
 #[used]
 static mut I2C0ADDR: [u16; 16] = [0u16; 16];
 
 /// Tracks the I2C1 addresses which have an interface associated with it.
-#[link_section = ".systembss.I2C1ADDR"]
+#[link_section = ".sysbss0.I2C1ADDR"]
 #[used]
 static mut I2C1ADDR: [u16; 16] = [0u16; 16];
 

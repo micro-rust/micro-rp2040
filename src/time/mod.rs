@@ -10,6 +10,7 @@
 mod systick;
 
 pub use self::systick::Systick;
+pub use self::timer::USTimer;
 
 pub mod alarm;
 pub mod rtc;

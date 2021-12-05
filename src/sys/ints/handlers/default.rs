@@ -8,5 +8,5 @@ fn DefaultSystickFn() {
 
 #[no_mangle]
 fn DefaultHandlerFn() {
-	micro::asm::bkpt::<255>();
+	return;
 }

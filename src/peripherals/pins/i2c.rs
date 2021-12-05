@@ -1,9 +1,7 @@
 //! I2C Pin abstractions.
 
 
-use crate::raw::AtomicRegister;
-
-use micro::Register;
+use crate::prelude::*;
 
 use super::*;
 

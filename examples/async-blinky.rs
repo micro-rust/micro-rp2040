@@ -12,31 +12,20 @@
 use micro_rp2040 as rp2040;
 
 
-// Import the macro to declare the main function for core 0.
-use rp2040::{ main0, systick };
-
-
-// Import Gpio to be able to use the pins.
-use rp2040::pins::Gpio;
-// LedPin is a safe optimized abstraction over a pin that drives an led.
-use rp2040::pins::led::LedPin;
+// Import the prelude of the crate imports the basic traits needed to interact with the framework.
+use rp2040::prelude::*;
 
 
 // Import the Systick abstraction.
-use rp2040::time::systick::Systick;
+use rp2040::time::Systick;
 
 
 // Use this to import a safe abstraction over the nop and bkpt assembly instructions.
 use micro::asm::*;
 
 
-// Static to hold the LED Pin to pass from the main function once initialized.
-#[used]
-static mut LED : Option<LedPin<25>> = None;
-
-
-
 // Give the linker the pointer of the main function.
+// This step is mandatory, as the library does not have direct access to your own code.
 main0!(usermain);
 
 
@@ -63,7 +52,7 @@ fn usermain() -> ! {
         let x = 2;
         let y = 2;
 
-        let z = x + y;
+        let _z = x + y;
     }
 }
 
@@ -72,12 +61,17 @@ fn usermain() -> ! {
 // Define the Systick interrupt for the Core 0.
 #[no_mangle]
 unsafe extern "C" fn Systick0() {
-    static mut STATE : bool = false;
-    static mut LED : Option<LedPin<25>> = None;
+    // Import Gpio to be able to use the pin.
+    // Import LedPin, an abstraction over LED connected to pins.
+    use rp2040::hal::pins::{ Gpio, led::LedPin };
 
-    match unsafe { &LED } {
+
+    static mut STATE : bool = false;
+    static mut LED : Option<Gpio<25>> = None;
+
+    match &LED {
         // If the Pin has been acquired, toggle it.
-        Some(ref led) => unsafe {
+        Some(ref led) => {
             if STATE { led.off(); STATE = false; }
             else { led.on(); STATE = true; }
         },
@@ -85,12 +79,12 @@ unsafe extern "C" fn Systick0() {
         // If the Pin has not been acquired yet, acquire it and turn it on.
         None => {
             // Acquire PIN 25.
-            let led: LedPin<25> = LedPin::from(Gpio::<25>::acquire().unwrap());
+            let led = Gpio::<25>::acquire().unwrap();
 
             // Initialize the LED.
             led.init();
 
-            unsafe { LED = Some(led); }
+            LED = Some(led);
         },
     }
 }
@@ -98,6 +92,6 @@ unsafe extern "C" fn Systick0() {
 
 // The user must define their own panic handler.
 #[panic_handler]
-fn panic(info: &core::panic::PanicInfo) -> ! {
+fn panic(_: &core::panic::PanicInfo) -> ! {
     loop { bkpt::<255>() }
 }

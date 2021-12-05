@@ -27,6 +27,8 @@ pub enum SystemError {
 
     BufferOverlap,
 
+    LockUnavailable,
+
     /// Unknown / Other error.
     Other,
 }

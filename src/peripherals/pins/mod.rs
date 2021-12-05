@@ -6,16 +6,15 @@
 #![allow(non_camel_case_types)]
 
 
+pub mod adc;
 pub mod i2c;
 pub mod uart;
-
+pub mod spi;
 
 pub mod led;
 
 
-use crate::{
-    error::SystemError, sync::Syslock, sys::SystemResource,
-};
+use crate::prelude::*;
 
 
 pub use self::pinout::*;
@@ -37,21 +36,27 @@ impl<const N: usize> Gpio<N> {
 
 impl<const N: usize> SystemResource for Gpio<N> {
     fn acquire() -> Result<Self, SystemError> {
-        extern "C" {
-            static mut PINLOCK : u32;
-        }
-
         match Syslock::acquire() {
-            Some(_) => match (unsafe { PINLOCK } >> N) & 1 {
-                0 => {
-                    unsafe { PINLOCK |= 1 << N; }
-                    Ok(Self)
-                },
+            Ok(_) => match Resources::pin::<N>() {
+                Some(_) => Ok(Self),
                 _ => Err( SystemError::PeripheralNotAvailable ),
             },
 
             _ => Err( SystemError::NoSystemLock ),
         }
+    }
+
+    fn release(&mut self) {
+        DropResources::pin::<N>();
+
+        core::mem::forget(self);
+    }
+}
+
+
+impl<const N: usize> Drop for Gpio<N> {
+    fn drop(&mut self) {
+        DropResources::pin::<N>();
     }
 }
 
@@ -60,12 +65,57 @@ impl<const N: usize> SystemResource for Gpio<N> {
 pub trait PinTrait {
     const IO  : usize;
     const PAD : usize;
+
+    fn number(&self) -> usize;
+    fn set(&self);
+    fn clear(&self);
+    fn output(&self, s: bool);
+    fn function(&self, f: u8);
 }
 
 
 impl<const N: usize> PinTrait for Gpio<N> {
     const IO  : usize = 0x40014000 + {0x08 * N};
     const PAD : usize = 0x4001C000 + {0x04 * N} + 0x04;
+
+    #[inline(always)]
+    fn number(&self) -> usize {
+        N
+    }
+
+    #[inline(always)]
+    fn set(&self) {
+        // Reference to the SIO OUT SET register.
+        let os = unsafe { &mut *(0xD0000014 as *mut SIORegister<u32>) };
+
+        os.write(1 << N);
+    }
+
+    #[inline(always)]
+    fn clear(&self) {
+        // Reference to the SIO OUT SET register.
+        let oc = unsafe { &mut *(0xD0000018 as *mut SIORegister<u32>) };
+
+        oc.write(1 << N);
+    }
+
+    #[inline(always)]
+    fn output(&self, s: bool) {
+        // Reference to the SIO OUT SET register.
+        let oes = unsafe { &mut *(0xD0000024 as *mut SIORegister<u32>) };
+
+        // Reference to the SIO OUT SET register.
+        let oec = unsafe { &mut *(0xD0000028 as *mut SIORegister<u32>) };
+
+        if s { oes.write(1 << N) }
+        else { oec.write(1 << N) }
+    }
+
+    #[inline(always)]
+    fn function(&self, f: u8) {
+        let io: &'static mut [AtomicRegister<u32>; 2] = unsafe { &mut *(Self::IO as *mut _) };
+        io[1].write(f as u32);
+    }
 }
 
 

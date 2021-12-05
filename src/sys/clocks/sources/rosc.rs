@@ -1,8 +1,7 @@
 //! Ring Oscillator wrapper.
 
 
-use crate::raw::AtomicRegister;
-use crate::sync::Syslock;
+use crate::prelude::*;
 use crate::sys::CLOCKS;
 use crate::sys::clocks::{ Clock, ClockInfo };
 
@@ -46,7 +45,7 @@ impl Rosc {
     /// Freezes the clock.
     pub fn freeze(&mut self) -> Option<u32> {
         match Syslock::acquire() {
-            Some(_) => {
+            Ok(_) => {
                 self.0.__freeze__();
                 Some( unsafe { CLOCKS.freqs[Clock::Rosc.index()] } )
             },

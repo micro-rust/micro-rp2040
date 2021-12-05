@@ -1,6 +1,5 @@
 //! Blocking I2C interfaces.
 
-
 /// Master interface.
 mod master;
 
@@ -8,4 +7,4 @@ mod master;
 //mod slave;
 
 
-pub use self::master::I2CMaster;
+pub use self::master::{ I2CMaster, I2CMasterInterface };

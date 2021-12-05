@@ -64,24 +64,50 @@ impl ClockOutputs {
         }
     }
 
+    /// Internal method to wnable default clocks.
+    #[inline(never)]
+    fn setup(addr: u32, int: u32, frac: u32, src: u32) {
+        let regs = unsafe { &mut *(addr as *mut [AtomicRegister<u32>; 3]) };
+
+        // Stop the clock cleanly and delay for propagation.
+        regs[0].write(0);
+
+        while regs[2].read() == 0 {}
+
+        // Set the divisor.
+        regs[1].write((int << 8) | frac);
+
+        // Configure the source and enable.
+        regs[0].write((1 << 11) | (src << 5));
+    }
+
     /// Initializes the Clock sources.
     #[inline(never)]
     pub(crate) fn init(&mut self) {
+        use crate::sys::{ CLOCKS, clocks::Clock };
+
         // Configure Reference clock.
         self.reference.init();
+        unsafe { CLOCKS.freqs[Clock::Usb.index()] = crate::features::__XFREQ__; }
 
         // Configure System clock.
         self.system.init();
 
         // Configure USB clock.
-        self.usb.init();
+        Self::setup(0x40008054, 1, 0, 0);
+        unsafe { CLOCKS.freqs[Clock::Usb.index()] = 48_000_000; }
 
         // Configure ADC clock.
+        Self::setup(0x40008060, 1, 0, 0);
+        unsafe { CLOCKS.freqs[Clock::Adc.index()] = 48_000_000; }
 
         // Configure RTC clock.
+        Self::setup(0x4000806C, 1000, 0, 0);
+        unsafe { CLOCKS.freqs[Clock::Rtc.index()] = 48_000; }
 
         // Configure Peripheral clock.
-        self.peripheral.init();
+        Self::setup(0x40008048, 1, 0, 0);
+        unsafe { CLOCKS.freqs[Clock::Peripheral.index()] = CLOCKS.freqs[Clock::System.index()]; }
     }
 
     /// Pre initialization sequence.

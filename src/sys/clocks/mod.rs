@@ -2,60 +2,20 @@
 
 
 
-/// Clock information module.
-mod info;
-
-/// Clock sources.
-mod sources;
-
-/// Clock outputs.
-mod outputs;
-
-
-pub use self::info::ClockInfo;
-use self::sources::ClockSources;
-use self::outputs::ClockOutputs;
-
-
-pub struct Clocks {
-    /// Clock sources of the RP2040.
-    pub(crate) sources: ClockSources,
-
-    /// Clock outputs of the RP2040.
-    pub(crate) outputs: ClockOutputs,
-
-    /// Array with all the frequencies of the RP2040 clocks.
-    pub(crate) freqs: [u32; 16],
-}
+pub struct Clocks;
 
 
 impl Clocks {
-    /// Static initializer.
-    #[inline(always)]
-    pub const fn empty() -> Clocks {
-        Clocks {
-            sources: ClockSources::empty(),
-            outputs: ClockOutputs::empty(),
-            freqs: [0u32; 16],
-        }
-    }
-
-    /// Initialization code.
-    pub fn init(&mut self) {
-        // Preinitialization.
-        self.outputs.preinit();
-
-        // Initialize all clock sources.
-        self.sources.init();
-
-        // Configure all outputs.
-        self.outputs.init();
-    }
-
     /// Returns the frequency of the system clock.
     #[inline(always)]
     pub fn sysfreq() -> u32 {
-        unsafe { crate::sys::CLOCKS.freqs[Clock::System.index()] }
+        unsafe { crate::sys::CLOCKS[Clock::System.index()] }
+    }
+
+    /// Returns the frequency of the peripheral clock.
+    #[inline(always)]
+    pub fn peripheral() -> u32 {
+        unsafe { crate::sys::CLOCKS[Clock::Peripheral.index()] }
     }
 }
 

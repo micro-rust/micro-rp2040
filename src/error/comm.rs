@@ -8,9 +8,6 @@ pub enum CommError {
     /// UART Error.
     Uart(UartError),
 
-    /// SPI Error.
-    Spi(SPIError),
-
     /// USB Error.
     Usb(USBError),
 
@@ -39,19 +36,6 @@ pub enum UartError {
 
     /// A DMA error ocurred.
     Dma,
-
-    /// Unknown / Other error.
-    Other,
-}
-
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SPIError {
-    /// Receive timeout.
-    Timeout,
-
-    /// Receive overrun.
-    Overrun,
 
     /// Unknown / Other error.
     Other,

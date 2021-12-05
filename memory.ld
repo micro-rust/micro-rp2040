@@ -73,226 +73,277 @@ PINLOCK =   __GPIO00__ | __GPIO01__ | __GPIO02__ | __GPIO03__ | __GPIO04__ |
 
 /* Memory map of he RP2040 */
 MEMORY {
-	/* Chip ROM FLASH. Read and execute. */
-	ROM(RX ) : ORIGIN = 0x00000000, LENGTH = 16K
+    /* Chip ROM FLASH. Read and execute. */
+    ROM(RX ) : ORIGIN = 0x00000000, LENGTH = 16K
 
 
-	/* 16MB FLASH memory access through XIP cache. Check cache, update on miss. */
-	FLASHCU (RX ) : ORIGIN = 0x10000000, LENGTH = 16M
 
-	/* 16MB FLASH memory access through XIP cache. Check cache, do not update on miss. */
-	FLASHCN (RX ) : ORIGIN = 0x11000000, LENGTH = 16M
+    /* 16MB FLASH memory access through XIP cache. Check cache, update on miss. */
+    FLASH   (RX ) : ORIGIN = 0x10000000, LENGTH = 16M
 
-	/* 16MB FLASH memory access through XIP cache. Update cache, read after. */
-	FLASHNU (RX ) : ORIGIN = 0x12000000, LENGTH = 16M
+    /* 16MB FLASH memory access through XIP cache. Check cache, do not update on miss. */
+    FLASHCN (RX ) : ORIGIN = 0x11000000, LENGTH = 16M
 
-	/* 16MB FLASH memory access through XIP cache. Bypass cache. */
-	FLASHNN (RX ) : ORIGIN = 0x13000000, LENGTH = 16M
+    /* 16MB FLASH memory access through XIP cache. Update cache, read after. */
+    FLASHNU (RX ) : ORIGIN = 0x12000000, LENGTH = 16M
 
-
-	/* 16kB XIP Cache. Reclaimable from the peripheral. */
-	XIPRAM (RWX) : ORIGIN = 0x15000000, LENGTH = 16K
+    /* 16MB FLASH memory access through XIP cache. Bypass cache. */
+    FLASHNN (RX ) : ORIGIN = 0x13000000, LENGTH = 16M
 
 
-	/* 4 x 64kB word stripped SRAM banks. */
-	SRAMWS (RWX) : ORIGIN = 0x20000000, LENGTH = 256K
-
-	/* 2 x 4kB SRAM banks. */
-	SRAM4 (RWX) : ORIGIN = 0x20040000, LENGTH = 4K
-	SRAM5 (RWX) : ORIGIN = 0x20041000, LENGTH = 4K
-
-	/* 4 x 64kB individual SRAM banks. */
-	SRAM0 (RWX) : ORIGIN = 0x21000000, LENGTH = 64K
-	SRAM1 (RWX) : ORIGIN = 0x21010000, LENGTH = 64K
-	SRAM2 (RWX) : ORIGIN = 0x21020000, LENGTH = 64K
-	SRAM3 (RWX) : ORIGIN = 0x21030000, LENGTH = 64K
+    /* 16kB XIP Cache. Reclaimable from the peripheral. */
+    XIPRAM (RWX) : ORIGIN = 0x15000000, LENGTH = 16K
 
 
-	/* 4kB USB DPRAM. Reclaimable from the peripheral. */
-	USBRAM (RWX) : ORIGIN = 0x50100000, LENGTH = 4K
+    /* 4 x 64kB word stripped SRAM banks. */
+    SRAM (RWX) : ORIGIN = 0x20000000, LENGTH = 256K
 
 
-	/* 2 x 128B PIO Program Data. */
-	PIO0PD ( W ) : ORIGIN = 0x50200048, LENGTH = 128
-	PIO1PD ( W ) : ORIGIN = 0x50300048, LENGTH = 128
+
+    /* Core 0 Stack, Vector and System Data section */
+    EVECT0  (RWX) : ORIGIN = 0x20040000, LENGTH =  192
+    STACK0  (RWX) : ORIGIN = 0x200400C0, LENGTH = 3136
+    SYSMEM0 (RWX) : ORIGIN = 0x20040D00, LENGTH =  768
+
+    /* Core 0 Stack, Vector and System Data section */
+    EVECT1  (RWX) : ORIGIN = 0x20041000, LENGTH =  192
+    STACK1  (RWX) : ORIGIN = 0x200410C0, LENGTH = 3136
+    SYSMEM1 (RWX) : ORIGIN = 0x20041D00, LENGTH =  768
+
+
+
+    /* 4 x 64kB individual SRAM banks. */
+    SRAM0 (RWX) : ORIGIN = 0x21000000, LENGTH = 64K
+    SRAM1 (RWX) : ORIGIN = 0x21010000, LENGTH = 64K
+    SRAM2 (RWX) : ORIGIN = 0x21020000, LENGTH = 64K
+    SRAM3 (RWX) : ORIGIN = 0x21030000, LENGTH = 64K
+
+
+
+    /* 4kB USB DPRAM. Reclaimable from the peripheral. */
+    USBRAM (RWX) : ORIGIN = 0x50100000, LENGTH = 4K
+
+
+
+    /* 2 x 128B PIO Program Data. */
+    PIO0PD (RW ) : ORIGIN = 0x50200048, LENGTH = 128
+    PIO1PD (RW ) : ORIGIN = 0x50300048, LENGTH = 128
 }
 
 
 
 SECTIONS {
-	/* ******************************************************************** */
-	.bootloader ORIGIN(FLASHCU) : 
-	{
-		KEEP(*(.boot2));
-		KEEP(*(.boot2.*));
-	} > FLASHCU
+    /* ******************************************************************** */
+    .bootloader ORIGIN(FLASH) : 
+    {
+        KEEP(*(.boot2));
+        KEEP(*(.boot2.*));
+    } > FLASH
 
-	. = ORIGIN(FLASHCU) + 256;
-
-
-
-	/* ******************************************************************** */
-	.vector_table ORIGIN(FLASHCU) + 0x100 : 
-	{
-		/* Core 0 vector table. */
-		__svt0 = .;
-
-		LONG( ORIGIN(SRAM4) + 4096 );
-		KEEP(*(.vectortable.Reset0));
-		KEEP(*(.vectortable.int0));
-
-		__evt0 = .;
+    . = ORIGIN(FLASH) + 256;
 
 
 
-		/* Core 1 vector table. */
-		__svt1 = .;
+    /* ******************************************************************** */
+    .vector_table ORIGIN(FLASH) + 0x100 : 
+    {
+        /* Core 0 vector table. */
+        __svt0 = .;
 
-		LONG( ORIGIN(SRAM4) + 2048 );
-		KEEP(*(.vectortable.Reset1));
-		KEEP(*(.vectortable.int1));
+        LONG( ORIGIN(SYSMEM0) - 4 );
+        KEEP(*(.vectortable.Reset0));
+        KEEP(*(.vectortable.int0));
 
-		__evt1 = .;
-	} > FLASHCU
-
-
-
-	/* ******************************************************************** */
-	.text :
-	{
-		. = ALIGN(4);
-
-		/* Reset code. */
-		KEEP(*(.Reset.*));
-
-		/* User code. */
-		*(.text .text.*);
-
-		/* Hard Fault code. */
-		KEEP(*(.HardFault .HardFault.*));
-
-		/* Default handlers */
-		KEEP(*(.default .default.*));
-
-		. = ALIGN(4);
-	} > FLASHCU
-	. = ALIGN(4);
+        __evt0 = .;
 
 
 
-	/* ******************************************************************** */
-	.rodata : ALIGN(4)
-	{
-		*(.rodata .rodata.*);
-		. = ALIGN(4);
-	} > FLASHCU
+        /* Core 1 vector table. */
+        __svt1 = .;
+
+        LONG( ORIGIN(SYSMEM1) - 4 );
+        KEEP(*(.vectortable.Reset1));
+        KEEP(*(.vectortable.int1));
+
+        __evt1 = .;
+    } > FLASH
 
 
 
-	/* DATA section. */
-	/* ******************************************************************** */
-	.data : ALIGN(4)
-	{
-		. = ALIGN(4);
+    /* ******************************************************************** */
+    .text :
+    {
+        . = ALIGN(4);
 
-		__sdata = .;
+        /* Reset code. */
+        KEEP(*(.Reset.*));
 
-		*(.data .data.*);
+        /* User code. */
+        *(.text .text.*);
 
-		. = ALIGN(4);
-	} > SRAM0 AT >FLASHCU
+        /* Hard Fault code. */
+        KEEP(*(.HardFault .HardFault.*));
 
-	. = ALIGN(4);
+        /* Default handlers */
+        KEEP(*(.default .default.*));
 
-	__edata = .;
-	__ldata = LOADADDR(.data);
-
-
-
-	/* BSS section. */
-	/* ******************************************************************** */
-	. = ALIGN(4);
-	__sbss = .;
-
-	.bss (NOLOAD) : ALIGN(4)
-	{
-		. = ALIGN(4);
-
-		*(.bss .bss.*);
-		*(COMMON);
-
-		. = ALIGN(4);
-	} > SRAM1
-
-	. = ALIGN(4);
-	__ebss = .;
+        . = ALIGN(4);
+    } > FLASH
+    . = ALIGN(4);
 
 
 
-	/* UNINIT section. */
-	/* ******************************************************************** */
-	. = ALIGN(4);
-	__suninit = .;
+    /* ******************************************************************** */
+    .rodata : ALIGN(4)
+    {
+        *(.rodata .rodata.*);
 
-	.uninit (NOLOAD) : ALIGN(4)
-	{
-		. = ALIGN(4);
+        LONG(__MAINFN0);
+        LONG(__MAINFN1);
 
-		*(.uninit .uninit.*);
-
-		. = ALIGN(4);
-	} > SRAM1
-
-	. = ALIGN(4);
-	__euninit = .;
+        . = ALIGN(4);
+    } > FLASH
 
 
 
+    /* DATA section. */
+    /* ******************************************************************** */
+    .data : ALIGN(4)
+    {
+        . = ALIGN(4);
 
-	/* System DATA section. */
-	/* ******************************************************************** */
-	.sysdata : ALIGN(4)
-	{
-		. = ALIGN(4);
+        __sdata = .;
 
-		__ssysdata = .;
+        *(.data .data.*);
 
-		*(.systemdata .systemdata.*);
+        . = ALIGN(4);
+    } > SRAM AT >FLASH
 
-		LONG(PINLOCK);
+    . = ALIGN(4);
 
-		. = ALIGN(4);
-	} > SRAM5 AT >FLASHCU
-
-	. = ALIGN(4);
-
-	__esysdata = .;
-	__lsysdata = LOADADDR(.sysdata);
+    __edata = .;
+    __ldata = LOADADDR(.data);
 
 
-	/* System BSS section. */
-	/* ******************************************************************** */
-	. = ALIGN(4);
-	__ssysbss = .;
 
-	.sysbss (NOLOAD) : ALIGN(4)
-	{
-		. = ALIGN(4);
+    /* BSS section. */
+    /* ******************************************************************** */
+    . = ALIGN(4);
+    __sbss = .;
 
-		*(.systembss .systembss.*);
+    .bss (NOLOAD) : ALIGN(4)
+    {
+        . = ALIGN(4);
 
-		. = ALIGN(4);
-	} > SRAM5
+        *(.bss .bss.*);
+        *(COMMON);
 
-	. = ALIGN(4);
-	__esysbss = .;
+        . = ALIGN(4);
+    } > SRAM
+
+    . = ALIGN(4);
+    __ebss = .;
 
 
-	/* Discarded sections. */
-	/DISCARD/ :
-	{
-		*(.ARM.exidx);
-		*(.ARM.exidx.*);
-		*(.ARM.extab.*);
-	}
+
+    /* UNINIT section. */
+    /* ******************************************************************** */
+    . = ALIGN(4);
+    __suninit = .;
+
+    .uninit : ALIGN(4)
+    {
+        . = ALIGN(4);
+
+        *(.uninit .uninit.*);
+
+        . = ALIGN(4);
+    } > SRAM AT >FLASH
+
+    . = ALIGN(4);
+    __euninit = .;
+    __luninit = LOADADDR(.uninit);
+
+
+
+
+    /* System DATA and BSS section. */
+    /* ******************************************************************** */
+    .sysdata0 : ALIGN(4)
+    {
+        . = ALIGN(4);
+
+        __ssysdata0 = .;
+
+        *(.systemdata0 .systemdata0.*);
+
+        LONG(PINLOCK);
+
+        . = ALIGN(4);
+    } > SYSMEM0 AT >FLASH
+
+    . = ALIGN(4);
+
+    __esysdata0 = .;
+    __lsysdata0 = LOADADDR(.sysdata0);
+
+
+    . = ALIGN(4);
+    __ssysbss0 = .;
+
+    .sysbss0 (NOLOAD) : ALIGN(4)
+    {
+        . = ALIGN(4);
+
+        *(.systembss0 .systembss0.*);
+
+        . = ALIGN(4);
+    } > SYSMEM0
+
+    . = ALIGN(4);
+    __esysbss0 = .;
+    /* ******************************************************************** */
+    .sysdata1 : ALIGN(4)
+    {
+        . = ALIGN(4);
+
+        __ssysdata1 = .;
+
+        *(.systemdata1 .systemdata1.*);
+
+        LONG(PINLOCK);
+
+        . = ALIGN(4);
+    } > SYSMEM1 AT >FLASH
+
+    . = ALIGN(4);
+
+    __esysdata1 = .;
+    __lsysdata1 = LOADADDR(.sysdata1);
+
+
+    . = ALIGN(4);
+    __ssysbss1 = .;
+
+    .sysbss1 (NOLOAD) : ALIGN(4)
+    {
+        . = ALIGN(4);
+
+        *(.systembss1 .systembss1.*);
+
+        . = ALIGN(4);
+    } > SYSMEM1
+
+    . = ALIGN(4);
+    __esysbss1 = .;
+    /* ******************************************************************** */
+
+
+    /* Discarded sections. */
+    /DISCARD/ :
+    {
+        *(.ARM.exidx);
+        *(.ARM.exidx.*);
+        *(.ARM.extab.*);
+    }
 }

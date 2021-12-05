@@ -12,9 +12,9 @@ pub use self::float32::Float32;
 pub(crate) use self::table32::SFloatTable;
 
 
-#[link_section = ".systemdata.SFTABLE"]
+#[link_section = ".systembss0.SFTABLE"]
 #[used]
-pub static SFTABLE: SFloatTable = SFloatTable::empty();
+pub(crate) static mut SFTABLE: u32 = 0u32;
 
 
 
@@ -33,7 +33,7 @@ pub(crate) use self::table64::DFloatTable;
 
 
 #[cfg(feature = "bootrom-V2")]
-#[link_section = ".systembss.SFTABLE"]
+#[link_section = ".systembss1.DFTABLE"]
 #[used]
 pub static DFTABLE: usize = 0x00000000;
 

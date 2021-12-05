@@ -1,6 +1,6 @@
 //! Interrupt module.
 
-mod handlers;
+pub(crate) mod handlers;
 
 mod tables;
 
@@ -18,36 +18,6 @@ use self::tables::IRQTable;
 pub struct InterruptSystem;
 
 impl InterruptSystem {
-    /// Initializes the interrupt system.
-    pub fn init() {
-        // Load the core's vector table.
-        let new = match crate::sys::coreid() {
-            0 => {
-                Self::load(0x10000100 as *const u32, 0x20040000 as *mut u32);
-                0x20040000
-            },
-            _ => {
-                Self::load(0x10000140 as *const u32, 0x20040800 as *mut u32);
-                0x20040800
-            },
-        };
-
-        // Load a new IRQ table.
-        let table = IRQTable::at(new + 0x40);
-        table.init();
-
-        // Load DMA handlers.
-        table.set::<11>(handlers::dma0);
-        table.set::<12>(handlers::dma1);
-
-        // Enable the necessary interrupts.
-        Self::enableirq::<11>();
-        Self::enableirq::<12>();
-
-        // Relocate VTOR.
-        Self::relocate(new);
-    }
-
     /// Enables the given IRQ.
     #[inline(always)]
     pub fn enableirq<const IRQ: u8>() {
@@ -118,57 +88,18 @@ impl InterruptSystem {
         ICSR.write( ICSR.read() | 1 << 27 )
     }
 
-    /// Sets the PendSV exception flag.
+    /// Sets the Systick exception flag.
     #[inline(always)]
     pub fn setSystick() {
         let ICSR: &mut SIORegister<u32> = unsafe { &mut *(0xE000ED04 as *mut _) };
         ICSR.write( ICSR.read() | 1 << 26 )
     }
 
-    /// Clears the PendSV exception flag.
+    /// Clears the Systick exception flag.
     #[inline(always)]
     pub fn clearSystick() {
         let ICSR: &mut SIORegister<u32> = unsafe { &mut *(0xE000ED04 as *mut _) };
         ICSR.write( ICSR.read() | 1 << 25 )
-    }
-
-    /// Loads the vector table into the given address.
-    #[inline(always)]
-    fn load(mut l: *const u32, mut s: *mut u32) {
-        use core::ptr::{
-            read_volatile as read,
-            write_volatile as write,
-        };
-
-        for _ in 0..16 {
-            unsafe {
-                write(s, read(l));
-                s = s.offset(1);
-                l = l.offset(1);
-            }
-        }
-    }
-
-    /// Configures a new VTOR address.
-    #[inline(always)]
-    pub(crate) fn relocate(addr: u32) {
-        use micro::asm::*;
-
-        let VTOR: &mut SIORegister<u32> = unsafe { &mut *(0xE000ED08 as *mut _) };
-
-        // Disable interrupts.
-        cpsid_i();
-
-        // Write relocation address.
-        VTOR.write(addr);
-
-        // Set all memory barriers.
-        isb();
-        dmb();
-        dsb();
-
-        // Restore interrupts.
-        cpsie_i();
     }
 
     /// Configures the IRQ with the given function and priority level.

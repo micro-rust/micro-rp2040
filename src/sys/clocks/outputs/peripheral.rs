@@ -1,13 +1,11 @@
 //! Reference Clock wrapper.
 
 
-use crate::raw::AtomicRegister;
-use crate::sync::Syslock;
+use crate::prelude::*;
 use crate::sys::CLOCKS;
 use crate::sys::clocks::{ Clock, ClockInfo };
 
 use micro::Peripheral;
-use micro::Register;
 
 
 /// Static reference to the Peripheral Clock Control peripheral.
@@ -38,8 +36,6 @@ impl PeripheralClock {
 
         // Configure information.
         self.0.info.0 = Clock::System;
-
-        unsafe { CLOCKS.freqs[Clock::Peripheral.index()] = CLOCKS.freqs[Clock::System.index()]; }
     }
 
     /// Returns the current clock frequency.
@@ -57,7 +53,7 @@ impl PeripheralClock {
     /// Freezes the clock.
     pub fn freeze(&mut self) -> Option<u32> {
         match Syslock::acquire() {
-            Some(_) => {
+            Ok(_) => {
                 self.0.__freeze__();
 
                 Some( unsafe { CLOCKS.freqs[Clock::Peripheral.index()] } )

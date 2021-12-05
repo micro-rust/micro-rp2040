@@ -6,12 +6,7 @@
 #![allow(non_camel_case_types)]
 
 
-use crate::error::{ Error, SystemError };
-use crate::raw::AtomicRegister;
-use crate::sync::Syslock;
-
-use micro::Register;
-
+use crate::prelude::*;
 
 
 pub struct PowerSystem;
@@ -33,7 +28,7 @@ impl PowerSystem {
     /// Inner function to set the voltage.
     unsafe fn voltage(v: u8) -> Result<(), Error> {
         match Syslock::acquire() {
-            Some(_) => {
+            Ok(_) => {
                 let vreg = &mut *(0x40064000 as *mut AtomicRegister<u32>);
 
                 let val = (u32::from(v) << 4) | 1;
@@ -62,7 +57,7 @@ impl PowerSystem {
         let bod = &mut *(0x40064004 as *mut AtomicRegister<u32>);
 
         match Syslock::acquire() {
-            Some(_) => match level {
+            Ok(_) => match level {
                 None => { Ok( bod.clear(1) ) },
                 Some(l) => Ok( bod.write( u32::from(l) | 1 ) ),
             },
@@ -86,7 +81,7 @@ impl PowerSystem {
         let psm = &mut *(0x40010000 as *mut [AtomicRegister<u32>; 4]);
 
         match Syslock::acquire() {
-            Some(_) => {
+            Ok(_) => {
                 psm[0].clear(u32::from(id));
                 psm[1].set(u32::from(id));
 

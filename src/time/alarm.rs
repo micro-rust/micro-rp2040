@@ -11,11 +11,11 @@ pub type Alarm2 = Alarm64Bits<2>;
 pub type Alarm3 = Alarm64Bits<3>;
 
 
-#[link_section = ".sysbss.ALARMSTATE"]
+#[link_section = ".sysbss0.ALARMSTATE"]
 #[used]
 static mut ALARMSTATE0: u32 = 0u32;
 
-#[link_section = ".sysbss.ALARMSTATE"]
+#[link_section = ".sysbss0.ALARMSTATE"]
 #[used]
 static mut ALARMSTATE1: u32 = 0u32;
 

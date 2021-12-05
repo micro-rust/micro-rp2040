@@ -1,43 +1,17 @@
-//! Initializes the RP2040 bare minimum peripherals.
-
-pub(super) fn initialize() {
-    // Initialization routine of the Reset peripheral.
-    crate::sys::power::RESET.init();
-
-    // Load ROM Function pointers and data.
-    unsafe { romfunc(); }
-
-    micro::asm::bkpt::<0>();
-
-    // Initialization routine of the Clocks peripheral.
-    unsafe { crate::sys::CLOCKS.init(); }
-
-    // Initialize the remaining peripherals.
-    crate::sys::power::RESET.finish();
-
-    // Initialize interrupts.
-    crate::sys::ints::InterruptSystem::init();
-
-    for i in 0..16 {
-        unsafe { crate::sys::TESTCLOCKS[i] = crate::sys::CLOCKS.freqs[i] }
-    }
-}
+//! Initialization procedure of the ROM Function Tables.
 
 
 /// Loads all the ROM function pointers.
 #[allow(mutable_transmutes)]
 #[inline(never)]
-unsafe fn romfunc() {
-    use crate::math::*;
-
-    use core::ptr::{
-        read_volatile as read,
-        write_volatile as write,
-    };
-
-
+pub(crate) unsafe fn romfunc() {
     // Load the Soft Float table pointer.
     let sf: u32 = rom_table_lookup(0x16 as *const u16, *b"SF");
+
+    // Load the SF Table pointer.
+    crate::math::SFloatTable::load(sf);
+
+    /*
 
     // Get size of bootrom table.
     let size = SFTABLE.0.len();
@@ -48,8 +22,6 @@ unsafe fn romfunc() {
     // Source pointer.
     let mut source: *const u16 = sf as *const _;
 
-    micro::asm::bkpt::<1>();
-
     for _ in 0..size {
         let pointer = read(source) as u32;
 
@@ -57,6 +29,7 @@ unsafe fn romfunc() {
         dest = dest.offset(1);
         source = source.offset(2);
     }
+    */
 
     //write((&crate::math::SFTABLE) as *const usize as *mut usize, sf)
 }
