@@ -1,236 +1,296 @@
-//! Allocation module.
-//! Implements all the functionality of the alloc core module.
+//! # Allocation module.
+//! 
+//! This is not a TRUE allocator, but serves as a buffer tracker.
+//! This module helps the user to reserve buffers outside the stack without
+//! worrying about manually tracking them and making sure they don't overlap.
+//! 
+//! The allocator is mainly designed for high data density memory buffering.
+//! This allocator is designed to push as much data as possible into SRAM
+//! at the expense of time spent looking for free memory.
+//! 
+//! Overall performance in tests is `O(n)` where `n` is the current amount of
+//! data allocated. Bigger buffers have better performance as there are less
+//! checks to be made.
+//! 
+//! Once most memory has been allocated, small objects can still be allocated
+//! in the residual sections between objects, at an increased computation cost.
+//! 
+//! If the user wants to use a true allocator, simply reserve some buffers
+//! and point the allocator to those pages.
+//! 
+//! This allocator has 1 kB of memory overhead, leaving 255 kB for the user (99.6%).
+//! The granularity of the allocator is 32 bytes (8 words).
+//! 
 
 
-#![deny(warnings)]
+
+#![feature(const_mut_refs)]
 
 
-mod page;
-
-
-use core::alloc::GlobalAlloc;
-use core::alloc::Layout;
-
-use crate::sync::AllocatorLock;
-
-use self::page::Page;
-
-
-type BigPage = Page<128>;
-type SmallPage = Page<4>;
-
-
-
-#[global_allocator]
-#[link_section = ".systembss.ALLOCATOR"]
-static ALLOCATOR: AllocatorWrapper = AllocatorWrapper;
-
-
-/// Wrapper for the allocator.
-pub struct AllocatorWrapper;
-
-
-unsafe impl GlobalAlloc for AllocatorWrapper {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        // Wait for the allocator lock.
-        loop {
-            match AllocatorLock::acquire() {
-                Some(_) => {
-                    // Create reference to the real allocator.
-                    let allocator = &mut *(0x20000000 as *mut MicroAllocator);
-
-                    match allocator.allocate(layout) {
-                        Some(addr) => return addr,
-                        _ => return 0x00000000 as *mut u8,
-                    }
-                },
-                _ => continue,
-            }
-        }
-    }
-
-    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        // Wait for the allocator lock.
-        loop {
-            match AllocatorLock::acquire() {
-                Some(_) => {
-                    // Create reference to the real allocator.
-                    let allocator = &mut *(0x20000000 as *mut MicroAllocator);
-
-                    allocator.deallocate(ptr, layout);
-                },
-                _ => continue,
-            }
-        }
-    }
+/// Allocates memory buffers in chunks of 1 kBytes (1024).
+#[derive(Debug, Clone, Copy)]
+pub struct Allocator {
+    /// Bit tracking of the memory regions.
+    l0: [u32; 256],
 }
 
-
-/// Total size = 64 * 8 bytes + 64 * 4 bytes = 768 bytes = 6 small pages.
-pub struct MicroAllocator<'a> {
-    /// Big pages to perform big allocations of objects and smaller pages.
-    /// 64 pages * 4 kB / page = 256 kB.
-    big: [BigPage; 64],
-
-    /// Small pages to perform allocations of small objects.
-    /// 64 arrays * 32 pages / array * 128 bytes / page = 256 kB.
-    small: [Option<&'a mut [SmallPage; 32]>; 64],
-}
-
-
-impl<'a> MicroAllocator<'a> {
-    /// Creates the Allocator and initializes it.
-    pub(crate) fn init() {
-        // Build at stripped memory.
-        let base = 0x20000000;
-
-        // Reference to the allocator.
-        let allocator = unsafe { &mut *(base as *mut Self) };
-
-        // Initialize all big pages.
-        BigPage::array( base as *mut _, base);
-        BigPage::array( (base + 256) as *mut _, base+ (4096 * 32) );
-
-        // Initialize all small pages pointers.
-        let small = unsafe { &mut *((base + 512) as *mut [Option<&'a mut [SmallPage; 32]>; 64]) };
-
-        for item in small.iter_mut() {
-            *item = None;
-        }
-
-        // Reserve first 8 pages.
-        allocator.big[0].region0();
+impl Allocator {
+    /// Static initializer.
+    pub const fn new() -> Allocator {
+        Allocator { l0: [0u32; 256] }
     }
 
-    /// Allocates a new object.
-    pub(self) unsafe fn allocate(&mut self, layout: Layout) -> Option<*mut u8> {
-        match layout.size() {
-            0..=96 => self.allocsmall(layout),
-            _ => self.allocbig(layout),
-        }
-    }
+    /// Attempts to allocate a buffer.
+    /// Cannot allocate more than 2048 bytes at once.
+    /// The buffers can be merged later.
+    pub fn allocate(&mut self, size: u32) -> Option<u32> {
+        // If size is 0, return.
+        if size == 0 { return None; }
 
-    /// Deallocates an object.
-    pub(self) unsafe fn deallocate(&mut self, ptr: *mut u8, layout: Layout) {
-        // Check size.
-        match layout.size() {
-            0..=96 => self.deallocsmall(ptr, layout),
-            _ => self.deallocbig(ptr, layout),
-        }
-    }
-
-
-    /// Allocates a big object (up to 4096 for now) (maximum alignment 128 bytes).
-    unsafe fn allocbig(&mut self, layout: Layout) -> Option<*mut u8> {
-        for page in self.big.iter_mut() {
-            if let Some(addr) = page.alloc::<128>(layout.size() as u32) {
-                return Some(addr);
-            }
-        }
-
-        None
-    }
-
-    /// Deallocates a big object (up to 4096 for now) (maximum alignment 128 bytes).
-    unsafe fn deallocbig(&mut self, ptr: *mut u8, layout: Layout) {
-        for page in self.big.iter_mut() {
-            if page.contains(ptr) {
-                page.dealloc(ptr, layout.size() as u32);
-                return;
-            }
-        }
-    }
-
-    /// Allocates a small object.
-    unsafe fn allocsmall(&mut self, layout: Layout) -> Option<*mut u8> {
-        // Indicates if there are free small pages.
-        let mut free = None;
-
-        // Check all small pages for free space.
-        for (i, item) in self.small.iter_mut().enumerate() {
-            if let Some(array) = item {
-                for page in array.iter_mut() {
-                    match layout.align() {
-                        0..=4 => if let Some(addr) = page.alloc::<04>(layout.size() as u32) { return Some( addr ) },
-                        8     => if let Some(addr) = page.alloc::<08>(layout.size() as u32) { return Some( addr ) },
-                        16    => if let Some(addr) = page.alloc::<16>(layout.size() as u32) { return Some( addr ) },
-                        32    => if let Some(addr) = page.alloc::<32>(layout.size() as u32) { return Some( addr ) },
-                        64    => if let Some(addr) = page.alloc::<64>(layout.size() as u32) { return Some( addr ) },
-
-                        _ => unimplemented!(),
-                    }
-                }
-            } else {
-                free = Some(i);
-            }
-        }
-
-        // If no small pages were free, either the device is OOM or memory is too fragmented.
-        let free = match free {
-            Some(f) => f,
-            _ => return None,
+        // Calculate how many 32 byte blocks are needed.
+        let n = match size & 0x1F {
+            0 => size >> 5,
+            _ => (size >> 5) + 1,
         };
 
-        // If this failed, reserve a new Big Page.
-        let mut region = None;
+        // Loop variable.
+        let mut i = 0;
 
-        for page in &mut self.big {
-            if page.empty() {
-                page.reserve();
+        // Check in each block if it can allocate the block.
+        loop {
+            if i >= 256 { break; }
 
-                region = Some(page.addr());
-
-                break;
+            match self.allocateblock(n, i) {
+                Some(addr) => {
+                    return Some( addr );
+                },
+                None => (),
             }
+
+            i += 1;
         }
 
-        // A new 4096 byte page was reserved, look for a new 128 byte space to place the page controls.
-        let mut control = None;
+        // If no block can allocate it raw, see if mixing blocks can do it.
+        loop {
+            if i >= 255 { break; }
 
-        for page in self.big.iter_mut() {
-            if let Some(addr) = page.alloc::<128>(256) {
-                control = Some(addr);
+            // Tail count.
+            let tail = self.tailcount(i);
 
-                break;
+            // Head count.
+            let head = self.headcount(i);
+
+            // Check if it's enough to allocate the object.
+            if n <= (tail + head) {
+                // Allocate the tail.
+                self.tailalloc(tail, i);
+
+                // Allocate the head.
+                self.headalloc(n - tail, i);
+
+                // Return the address.
+                let addr = 0x20000000 + (i as u32 * 1024) + ((32 - tail) * 32);
+
+                return Some( addr );
             }
-        }
 
-        // We have a place for a new array and a new big page.
-        if let (Some(region), Some(control)) = (region, control) {
-            // Create a new Small Page array.
-            let array = SmallPage::array(control, region);
-
-            let addr = match layout.align() {
-                0..=4 => if let Some(addr) = array[0].alloc::<04>(layout.size() as u32) { addr } else { unreachable!() },
-                8     => if let Some(addr) = array[0].alloc::<08>(layout.size() as u32) { addr } else { unreachable!() },
-                16    => if let Some(addr) = array[0].alloc::<16>(layout.size() as u32) { addr } else { unreachable!() },
-                32    => if let Some(addr) = array[0].alloc::<32>(layout.size() as u32) { addr } else { unreachable!() },
-                64    => if let Some(addr) = array[0].alloc::<64>(layout.size() as u32) { addr } else { unreachable!() },
-
-                _ => unimplemented!(),
-            };
-
-            self.small[free] = Some(array);
-
-            return Some(addr);
+            i += 1;
         }
 
         None
     }
 
-    /// Deallocates a small object.
-    unsafe fn deallocsmall(&mut self, ptr: *mut u8, layout: Layout) {
-        // Check all small pages for free space.
-        for item in self.small.iter_mut() {
-            if let Some(array) = item {
-                for page in array.iter_mut() {
-                    if page.contains(ptr) {
-                        page.dealloc(ptr, layout.size() as u32);
+    /// Deallocates the given object.
+    pub fn dealloc<T: Sized>(&mut self, ptr: *mut T) {
+        self.deallocate(ptr as u32, core::mem::size_of::<T>() as u32)
+    }
 
-                        return;
-                    }
-                }
+    /// Deallocates a given size from an address.
+    fn deallocate(&mut self, addr: u32, size: u32) {
+        // Calculate how many 32 byte blocks are needed.
+        let n = match size & 0x1F {
+            0 => size >> 5,
+            _ => (size >> 5) + 1,
+        };
+
+        // Calculate the base address.
+        let idx = (addr as usize - 0x20000000) >> 10;
+
+        match n {
+            0..=32 => {
+                // Create the mask for the first tracker.
+                let mask = match n - 32 {
+                    32 => 0xFFFFFFFF,
+                    m => (1 << m) - 1,
+                };
+
+                self.l0[idx] &= !mask;
+            },
+
+            _ => {
+                // Create the mask for the second tracker.
+                let mask = match n - 32 {
+                    32 => 0xFFFFFFFF,
+                    m => (1 << m) - 1,
+                };
+
+                // Clear the flags.
+                self.l0[idx+0] = 0x00000000;
+                self.l0[idx+1] &= !mask;
+            },
+        }
+    }
+
+    /// Checks the given L1 tracker and returns the possible configuration data.
+    fn allocateblock(&mut self, n: u32, idx: usize) -> Option<u32> {
+        // Early return.
+        if self.l0[idx] == 0xFFFFFFFF { return None; }
+
+        // Create the mask.
+        let mask = match n {
+            32 => match self.l0[idx] {
+                0 => {
+                    // Set flags.
+                    self.l0[idx] = 0xFFFFFFFF;
+
+                    // Create address.
+                    let addr = 0x20000000 + (idx as u32 * 1024);
+
+                    return Some(addr);
+                },
+                _ => return None,
+            },
+            _ => (1 << n) - 1,
+        };
+        // Loop variable.
+        let mut k = 0u32;
+
+        // Get the L1 tracker.
+        let tracker = self.l0[idx];
+
+        // Check all internal blocks.
+        loop {
+            if k >= 32 - n { break; }
+
+            match tracker & (mask << k) {
+                0 => {
+                    // Set the flags.
+                    self.l0[idx] |= mask << k;
+
+                    // Create address.
+                    let addr = 0x20000000 + (idx as u32 * 1024) + (k * 32);
+
+                    return Some(addr);
+                },
+
+                _ => (),
+            }
+
+            k += 1;
+        }
+
+        None
+    }
+
+    /// Returns the amount of free space in the allocator.
+    pub fn free(&self) -> u32 {
+        // Get counter.
+        let mut c = 0;
+
+        for i in 0..256 {
+            c += self.freeblock(i);
+        }
+
+        c
+    }
+
+    /// Returns the amount of free bytes in this block.
+    fn freeblock(&self, idx: usize) -> u32 {
+        // Counter.
+        let mut c = 0;
+
+        // Get the tracker.
+        let tracker = self.l0[idx];
+
+        for k in 0..32 {
+            if (tracker & (1 << k)) == 0 {
+                c += 1;
             }
         }
+
+        c * 32
+    }
+
+    /// Returns the number of free blocks at the start of an L1 tracker.
+    fn headalloc(&mut self, n: u32, idx: usize) {
+        // Create the mask.
+        let mask = match n {
+            32 => 0xFFFFFFFF,
+            _ => (1 << n) - 1,
+        };
+
+        // Check that the mask does not overlap.
+        match self.l0[idx] & mask {
+            0 => self.l0[idx] |= mask,
+            _ => {
+                panic!("Could not HEAD allocate, overlap of regions.")
+            },
+        }
+
+    }
+
+    /// Returns the number of free blocks at the end of an L1 tracker.
+    fn tailalloc(&mut self, n: u32, idx: usize) {
+        // Create the mask.
+        let mask = match n {
+            32 => 0xFFFFFFFF,
+            _ => ((1 << n) - 1) << (32 - n),
+        };
+
+        // Check that the mask does not overlap.
+        match self.l0[idx] & mask {
+            0 => self.l0[idx] |= mask,
+            _ => panic!("Could not TAIL allocate, overlap of regions."),
+        }
+    }
+
+    /// Returns the number of free blocks at the start of an L1 tracker.
+    fn headcount(&mut self, idx: usize) -> u32 {
+        // Counter.
+        let mut c = 0;
+
+        // Get the tracker.
+        let tracker = self.l0[idx];
+
+        // Check internal blocks.
+        for k in 0..32 {
+            if (tracker & (1 << k)) != 0 {
+                return c;
+            }
+
+            c += 1;
+        }
+
+        c
+    }
+
+    /// Returns the number of free blocks at the end of an L1 tracker.
+    fn tailcount(&mut self, idx: usize) -> u32 {
+        // Counter.
+        let mut c = 0;
+
+        // Get the tracker.
+        let tracker = self.l0[idx];
+
+        // Check internal blocks.
+        for k in 0..32 {
+            if (tracker & (1 << (31 - k))) != 0 {
+                return c;
+            }
+
+            c += 1;
+        }
+
+        c
     }
 }

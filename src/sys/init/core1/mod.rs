@@ -3,9 +3,6 @@
 //! Configures and allows the use of the pseudo-kernel's functions.
 
 
-use crate::prelude::*;
-use crate::sync::Mailbox;
-
 
 mod init;
 
@@ -28,16 +25,8 @@ pub(crate) fn Reset1() -> ! {
     // Set up MPU with guard stack.
     mpu();
 
-    // Wait for all DMA channels to finish.
-    for i in 0..4 {
-        let dma = unsafe { &mut *((0x50000000 + (i * 0x40)) as *mut [AtomicRegister<u32>; 4]) };
-
-        'inner: loop {
-            if (dma[3].read() & (1 << 24)) == 0 {
-                break 'inner;
-            }
-        }
-    }
+    // Wait for all DMA channels to end.
+    crate::sys::init::dmawait();
 
     micro::asm::dmb();
     micro::asm::dsb();
@@ -48,23 +37,7 @@ pub(crate) fn Reset1() -> ! {
 
     // Wait for confirmation that Core 0 has finished.
     // Send a message to Core 0 indicating initialization has ended.
-    let (mut recv, mut sent) = (false, false);
-
-    loop {
-        if let Ok(_) = Mailbox::send(0xCAFECAFE) {
-            sent = true;
-        }
-
-        if let Ok(msg) = Mailbox::recv() {
-            match msg {
-                0xCAFECAFE => recv = true,
-                _ => continue,
-            }
-        }
-
-
-        if sent && recv { break }
-    }
+    crate::sys::init::corewait();
 
     // Jump to user code.
     extern "C" {

@@ -6,33 +6,49 @@
 
 use crate::prelude::*;
 
+use core::ptr::{
+    read_volatile as read,
+    write_volatile as write,
+};
+
 
 
 pub struct AllocatorLock;
 
-impl SystemResource for AllocatorLock {
-    /// Acquires the lock if it's available.
+impl PowerState for AllocatorLock {
     #[inline(always)]
-    fn acquire() -> Result<Self, SystemError> {
-        let lock = unsafe { &mut *(0xD0000178 as *mut SIORegister<u32>) };
+    fn poweron(&mut self) {}
+    #[inline(always)]
+    fn poweroff(&mut self) -> Result<(), SystemError> { Ok(()) }
+    #[inline(always)]
+    fn reset(&mut self) -> Result<(), SystemError> { Ok(()) }
+}
 
-        match lock.read() {
-            0 => Err( SystemError::LockUnavailable ),
+
+impl Acquire for AllocatorLock {
+    #[inline]
+    fn acquire() -> Result<Self, SystemError> {
+        // Volatile read on the lock.
+        match unsafe { read(0xD0000178 as *const u32) } {
+            0 => Err( SystemError::NoSystemLock ),
             _ => Ok( Self ),
         }
     }
+}
 
-    /// Releases the AllocatorLock.
+
+impl Release for AllocatorLock {
     #[inline(always)]
     fn release(&mut self) {
-        let lock = unsafe { &mut *(0xD0000178 as *mut SIORegister<u32>) };
-
-        lock.write(1);
+        // Volatile write on the lock.
+        unsafe { write(0xD0000178 as *mut u32, 1) }
     }
 }
 
 impl Drop for AllocatorLock {
+    #[inline(always)]
     fn drop(&mut self) {
-        self.release()
+        // Volatile write on the lock.
+        unsafe { write(0xD0000178 as *mut u32, 1) }
     }
 }

@@ -6,33 +6,39 @@
 
 use crate::prelude::*;
 
+use core::ptr::{
+    read_volatile as read,
+    write_volatile as write,
+};
 
 
-pub struct Syslock;
+pub(crate) struct Syslock;
 
-impl SystemResource for Syslock {
-    /// Acquires the lock if it's available.
-    #[inline(always)]
+impl Acquire for Syslock {
+    #[inline]
     fn acquire() -> Result<Self, SystemError> {
-        let lock = unsafe { &mut *(0xD000017C as *mut SIORegister<u32>) };
-
-        match lock.read() {
-            0 => Err( SystemError::LockUnavailable ),
+        // Volatile read on the lock.
+        match unsafe { read(0xD000017C as *const u32) } {
+            0 => Err( SystemError::NoSystemLock ),
             _ => Ok( Self ),
         }
     }
+}
 
-    /// Releases the Syslock.
+
+impl Release for Syslock {
     #[inline(always)]
-    fn release(&mut self) {
-        let lock = unsafe { &mut *(0xD000017C as *mut SIORegister<u32>) };
-
-        lock.write(1);
+    fn release(&mut self) -> Result<(), SystemError> {
+        // Volatile write on the lock.
+        unsafe { write(0xD000017C as *mut u32, 1); }
+        Ok(())
     }
 }
 
 impl Drop for Syslock {
+    #[inline(always)]
     fn drop(&mut self) {
-        self.release()
+        // Volatile write on the lock.
+        unsafe { write(0xD000017C as *mut u32, 1) }
     }
 }

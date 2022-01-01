@@ -2,9 +2,12 @@
 //! Gives access to all spinlocks for synchronization purposes.
 
 
-
 use crate::prelude::*;
 
+use core::ptr::{
+    read_volatile as read,
+    write_volatile as write,
+};
 
 
 #[cfg(feature = "alloc")]
@@ -20,36 +23,37 @@ const MAX: usize = 30;
 pub struct Spinlock<const N: usize>;
 
 
-impl<const N: usize> SystemResource for Spinlock<N> {
+impl<const N: usize> Acquire for Spinlock<N> {
     /// Acquires the lock if it's available.
-    #[inline(always)]
+    #[inline]
     fn acquire() -> Result<Self, SystemError> {
         if N > 31 { panic!("Spinlocks higher than 31 do not exist.") }
         if N == 31 { panic!("Spinlock 31 is system reserved.") }
 
         #[cfg(feature = "alloc")]
-        if N == 30 { panic!("Spinlock 31 is system reserved.") }
+        if N == 30 { panic!("Spinlock 30 is allocator reserved.") }
 
-        let lock = unsafe { &mut *(0xD0000100 as *mut [SIORegister<u32>; MAX]) };
-
-        match lock[N].read() {
+        match unsafe { read((0xD0000100 + (4 * N)) as *const u32) } {
             0 => Err( SystemError::LockUnavailable ),
-            _ => Ok( Self ),
+            _ => Ok( Self )
         }
-    }
-
-    /// Releases the Spinlock.
-    #[inline(always)]
-    fn release(&mut self) {
-        let lock = unsafe { &mut *(0xD0000100 as *mut [SIORegister<u32>; MAX]) };
-
-        lock[N].write(1);
     }
 }
 
+impl<const N: usize> Release for Spinlock<N> {
+    /// Releases the Spinlock.
+    #[inline(always)]
+    fn release(&mut self) -> Result<(), SystemError> {
+        unsafe { write((0xD0000100 + (4 * N)) as *mut u32, 1); }
+        Ok(())
+    }
+}
+
+
 impl<const N: usize> Drop for Spinlock<N> {
+    #[inline(always)]
     fn drop(&mut self) {
-        self.release()
+        unsafe { write((0xD0000100 + (4 * N)) as *mut u32, 1) }
     }
 }
 

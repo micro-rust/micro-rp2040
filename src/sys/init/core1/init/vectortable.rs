@@ -25,8 +25,8 @@ pub(crate) fn vectortable() {
     let iser = unsafe { &mut *(0xE000E100 as *mut SIORegister<u32>) };
 
     // Configure DMA0 interrupt.
-    table[12].write( crate::sys::ints::handlers::dma1 as u32 );
+    //table[12].write( crate::sys::ints::handlers::dma1 as u32 );
 
     // Enable all necessary interrupts.
-    iser.write(1 << 11);
+    //iser.write(1 << 11);
 }

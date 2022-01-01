@@ -1,6 +1,6 @@
 //! Interrupt module.
 
-pub(crate) mod handlers;
+//pub(crate) mod handlers;
 
 mod tables;
 

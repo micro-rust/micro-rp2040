@@ -32,6 +32,7 @@ pub mod math;
 /// Peripehrals module.
 pub mod peripherals;
 
+/// Hardware Abstraction Layer module.
 pub mod hal;
 
 /// Prelude module.
@@ -59,3 +60,11 @@ mod macros;
 
 /// Feature gated details.
 mod features;
+
+
+
+
+/// Emulated /dev/null.
+/// Used to discard unwanted data.
+#[link_section = ".bss.DISCARD"]
+pub(crate) static mut DISCARD: u32 = 0;

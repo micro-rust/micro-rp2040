@@ -7,15 +7,22 @@
 
 
 /// ADC peripheral module.
-pub mod adc;
+//pub mod adc;
 
 /// GPIO module.
-pub mod pins;
+pub mod gpio;
 
-/// PWM peripherals module.
+// PWM peripherals module.
 //pub mod pwm;
 
-/// SPI peripherals module.
-pub mod spi;
+// SPI peripherals module.
+//pub mod spi;
+
+// UART peripherals module.
+//pub mod uart;
+
+
+// USB peripherals module.
+//pub mod usb;
 
 

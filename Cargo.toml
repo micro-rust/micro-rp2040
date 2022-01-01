@@ -17,6 +17,7 @@ debug = true
 panic = "abort"
 lto = true
 debug = true
+opt-level = "z"
 
 [dependencies]
 

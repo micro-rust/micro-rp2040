@@ -75,7 +75,7 @@ fn dmazero(n: usize, src: *mut u32, start: *mut u32, end: *mut u32) {
 
     // Program the DMA block.
     dma[0].write(src as u32);
-    dma[1].write(end as u32);
+    dma[1].write(start as u32);
     dma[2].write(count);
     dma[3].write(CTRL);
 }

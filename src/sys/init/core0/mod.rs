@@ -7,8 +7,6 @@ mod init;
 mod wakeup;
 
 
-use crate::sync::Mailbox;
-
 
 use init::{ bss, clocks, data, finish, mpu, reset, sysdata, vectortable };
 use wakeup::wakeup;
@@ -29,18 +27,23 @@ pub(crate) fn Reset0() -> ! {
     // Initialize the BSS sections using DMA to speed up.
     bss();
 
+
     // Wakeup Core 1 to speed up init.
     wakeup();
+
 
     // Initialize the clocks.
     // Safe to do because the system clock is glitchless.
     clocks();
 
+
     // Initialize the Vector Table.
     vectortable();
 
+
     // Load the System Data 0.
     sysdata();
+
 
     // Load the program Data.
     data();
@@ -56,31 +59,7 @@ pub(crate) fn Reset0() -> ! {
 
     // Wait for confirmation that Core 1 has finished.
     // Send a message to Core 1 indicating initialization has ended.
-    let (mut recv, mut sent) = (false, false);
-
-    loop {
-        if let Ok(_) = Mailbox::send(0xCAFECAFE) {
-            sent = true;
-            unsafe { core::ptr::write_volatile(0x20003008 as *mut u32, 55) }
-        }
-
-        //micro::asm::bkpt::<255>();
-
-        if let Ok(msg) = Mailbox::recv() {
-            match msg {
-                0xCAFECAFE => {
-                    unsafe { core::ptr::write_volatile(0x20003004 as *mut u32, 55) }
-                    recv = true
-                },
-                _ => continue,
-            }
-        }
-
-        //micro::asm::bkpt::<255>();
-
-        if sent && recv { break }
-    }
-
+    crate::sys::init::corewait();
 
     // Jump to user code or hang if no user code is found.
     extern "C" {

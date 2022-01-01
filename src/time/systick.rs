@@ -54,25 +54,3 @@ impl Systick {
         scb::Systick::<SIORegister<u32>>::current()
     }
 }
-
-impl SystemResource for Systick {
-    fn acquire() -> Result<Self, SystemError> {
-        match Resources::systick() {
-            Some(_) => Ok(Self(scb::Systick::empty())),
-
-            _ => Err( SystemError::PeripheralNotAvailable ),
-        }
-    }
-
-    fn release(&mut self) {
-        DropResources::systick();
-
-        core::mem::forget(self);
-    }
-}
-
-impl Drop for Systick {
-    fn drop(&mut self) {
-        DropResources::systick();
-    }
-}

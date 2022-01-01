@@ -2,6 +2,7 @@
 
 
 #![deny(warnings)]
+#![allow(unused_variables)]
 
 
 use crate::prelude::*;
@@ -14,7 +15,6 @@ pub(super) mod core1;
 
 
 /// Non DMA way to load a memory region.
-#[inline(never)]
 pub(self) unsafe fn load(mut s: *mut u32, e: *mut u32, mut l: *const u32) {
     use core::ptr::{
         read_volatile as read,
@@ -32,7 +32,6 @@ pub(self) unsafe fn load(mut s: *mut u32, e: *mut u32, mut l: *const u32) {
 }
 
 /// Non DMA way to zero out a memory region.
-#[inline(never)]
 pub(self) unsafe fn zero(mut s: *mut u32, e: *mut u32) {
     use core::ptr::write_volatile as write;
 
@@ -46,7 +45,6 @@ pub(self) unsafe fn zero(mut s: *mut u32, e: *mut u32) {
 
 
 /// Loads a vectortable and reloads the VTOR.
-#[inline(never)]
 pub(self) unsafe fn vectortable(s: *mut u32, e: *mut u32, l: *const u32) {
     // Load the vectortable into the bottom of the stack.
     load(s, e, l);
@@ -69,7 +67,6 @@ pub(self) unsafe fn vectortable(s: *mut u32, e: *mut u32, l: *const u32) {
     micro::asm::cpsie_i();
 }
 
-#[inline(never)]
 pub(self) fn mpu(vect: u32, stack: u32) {
     // Set all memory barriers.
     isb();
@@ -152,4 +149,41 @@ pub(self) fn mpu(vect: u32, stack: u32) {
     isb();
     dmb();
     dsb();
+}
+
+
+/// Waits for all DMA channels to end.
+pub(self) fn dmawait() {
+    for i in 0..4 {
+        let dma = unsafe { &mut *((0x50000000 + (i * 0x40)) as *mut [AtomicRegister<u32>; 4]) };
+
+        'inner: loop {
+            if (dma[3].read() & (1 << 24)) == 0 {
+                break 'inner;
+            }
+        }
+    }
+}
+
+/// Waits for the other core's signal and sends the signal.
+pub(self) fn corewait() {
+    use crate::sync::Mailbox;
+
+    let (mut recv, mut sent) = (false, false);
+
+    loop {
+        if let Ok(_) = Mailbox::send(0xCAFECAFE) {
+            sent = true;
+        }
+
+        if let Ok(msg) = Mailbox::recv() {
+            match msg {
+                0xCAFECAFE => recv = true,
+                _ => continue,
+            }
+        }
+
+
+        if sent && recv { break }
+    }
 }

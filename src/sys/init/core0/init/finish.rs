@@ -1,20 +1,11 @@
 //! Setup finish procedure.
 
-use crate::prelude::*;
 use crate::features::__XFREQ__;
 use crate::sys::{ CLOCKS, clocks::Clock };
 
 pub(crate) fn finish() {
     // Wait for all DMA channels to finish.
-    for i in 0..4 {
-        let dma = unsafe { &mut *((0x50000000 + (i * 0x40)) as *mut [AtomicRegister<u32>; 4]) };
-
-        'inner: loop {
-            if (dma[3].read() & (1 << 24)) == 0 {
-                break 'inner;
-            }
-        }
-    }
+    crate::sys::init::dmawait();
 
 
     // Load the default clock values.
